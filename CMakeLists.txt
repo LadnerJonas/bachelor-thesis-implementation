@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_subdirectory(src)
+add_subdirectory(test)
+add_subdirectory(benchmark)
 
 
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")

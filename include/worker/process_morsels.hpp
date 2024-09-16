@@ -5,7 +5,7 @@
 #include "../output_data_storage/PartitionManager.hpp"
 #include "partitioning_function.hpp"
 
-template<typename T>
-void process_morsels(MorselManager<T>& morsel_manager, PartitionManager<T>& partition_manager);
+template<typename P, typename T>
+void process_morsels(MorselManager<T>& morsel_manager, PartitionManagerBase<P,T>& partition_manager);
 
 #endif // PROCESS_MORSELS_HPP

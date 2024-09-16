@@ -6,6 +6,7 @@
 #include "input_data_storage/MorselManager.hpp"
 #include "worker/process_morsels.hpp"
 #include "input_preparation/BinaryRelation.hpp"
+#include "output_data_storage/StdVectorBasedPartitionManager.cpp"
 
 int main() {
     constexpr size_t morsel_size = 1'000'000;  // 1 million elements per morsel
@@ -21,17 +22,18 @@ int main() {
     auto time_start = std::chrono::high_resolution_clock::now();
 
     MorselManager<int> global_morsel_manager(relation_data, relation_size, morsel_size);
-    PartitionManager<int> global_partition_manager(num_partitions);
+    StdVectorBasedPartitionManager<int> global_partition_manager(num_partitions);
 
 
     // Create threads and process data
     std::vector<std::thread> threads;
     for (size_t i = 0; i < num_threads; ++i) {
-        threads.emplace_back(process_morsels<int>, std::ref(global_morsel_manager), std::ref(global_partition_manager));
+        threads.emplace_back(process_morsels<StdVectorBasedPartitionManager<int>, int>, std::ref(global_morsel_manager),
+                             std::ref(global_partition_manager));
     }
 
     // Join all threads
-    for (auto& thread : threads) {
+    for (auto &thread: threads) {
         thread.join();
     }
 
@@ -49,7 +51,8 @@ int main() {
     }
 
     std::cout << "Total elements: " << total_elements << "/" << relation_size << "\n";
-    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms\n";
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count()
+              << "ms\n";
 
 
     return 0;
