@@ -18,19 +18,16 @@ void run_partitioning(size_t morsel_size, size_t num_partitions, int num_threads
     MorselManager<int> global_morsel_manager(relation_data, relation_size, morsel_size);
     PM global_partition_manager(num_partitions);
 
-    // Create threads and process data
     std::vector<std::thread> threads;
     for (size_t i = 0; i < num_threads; ++i) {
         threads.emplace_back(process_morsels<PM, int>, std::ref(global_morsel_manager),
                              std::ref(global_partition_manager));
     }
 
-    // Join all threads
     for (auto &thread: threads) {
         thread.join();
     }
 
-    // Optionally print the number of elements processed in each partition
     int total_elements = 0;
     for (size_t i = 0; i < global_partition_manager.num_partitions(); ++i) {
         auto [data, size] = global_partition_manager.get_partition(i);
@@ -52,12 +49,12 @@ int main() {
     params.setParam("name", "Partitioning Benchmark");
 
     // Loop over different thread counts
-    for (int num_threads = 1; num_threads <= max_threads; ++num_threads) {
+    for (auto num_threads = max_threads; num_threads >= 1; --num_threads) {
         // Set local benchmark parameters for this iteration
         params.setParam("threads", num_threads);
 
         // Only print header for the first iteration
-        bool printHeader = (num_threads == 1);
+        bool printHeader = (num_threads == max_threads);
 
         {
             params.setParam("impl", "StdVectorBasedPartitionManager");

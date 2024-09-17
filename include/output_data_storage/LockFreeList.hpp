@@ -4,16 +4,14 @@
 #include <atomic>
 #include <vector>
 #include <memory>
-#include <stdexcept>
-#include <cassert>
 #include <algorithm>
-#include <cstdlib> // For std::rand
+#include <cstdlib>
 
 template<typename T>
 struct alignas(std::hardware_destructive_interference_size) PaddedAtomic {
     std::atomic<T> value;
 
-    PaddedAtomic() : value() {}
+    PaddedAtomic() : value(nullptr) {}
 
     explicit PaddedAtomic(const T &init) : value(init) {}
 
@@ -33,7 +31,7 @@ struct alignas(std::hardware_destructive_interference_size) PaddedAtomic {
 template<typename T>
 class LockFreeList {
 public:
-    explicit LockFreeList(size_t num_buckets = 4);
+    explicit LockFreeList(size_t num_buckets = 16);
 
     void insert(const T *array, size_t size);
 
@@ -46,13 +44,14 @@ private:
         std::atomic<Node *> next;
 
         Node(const T *arr, size_t sz)
-                : array(new T[sz]), size(sz), next(nullptr) {
-            std::copy(arr, arr + sz, array.get());
+                : array(arr ? new T[sz] : nullptr), size(sz), next(nullptr) {
+            if (arr) {
+                std::copy(arr, arr + sz, array.get());
+            }
         }
     };
 
     std::vector<PaddedAtomic<Node *>> heads_;
-    std::vector<PaddedAtomic<Node *>> tails_;
     size_t num_buckets_;
 
     size_t get_random_bucket() const;
@@ -60,11 +59,9 @@ private:
 
 template<typename T>
 LockFreeList<T>::LockFreeList(size_t num_buckets)
-        : heads_(num_buckets), tails_(num_buckets), num_buckets_(num_buckets) {
+        : heads_(num_buckets), num_buckets_(num_buckets) {
     for (size_t i = 0; i < num_buckets; ++i) {
-        Node *dummy_node = new Node(nullptr, 0); // Dummy node
-        heads_[i].store(dummy_node);
-        tails_[i].store(dummy_node);
+        heads_[i].store(nullptr); // Initially, all heads point to nullptr
     }
 }
 
@@ -75,20 +72,15 @@ size_t LockFreeList<T>::get_random_bucket() const {
 
 template<typename T>
 void LockFreeList<T>::insert(const T *array, size_t size) {
-    Node *new_node = new Node(array, size);
+    Node *new_node = new Node(array, size); // Allocate new node
 
     size_t bucket = get_random_bucket();
-    Node *dummy_node = new Node(nullptr, 0); // Dummy node for comparison
-    Node *old_tail = tails_[bucket].load();
+    Node *old_head = heads_[bucket].load();
 
-    while (true) {
-        if (old_tail->next.compare_exchange_weak(dummy_node, new_node)) {
-            delete dummy_node;
-            tails_[bucket].compare_exchange_strong(old_tail, new_node);
-            break;
-        }
-        old_tail = tails_[bucket].load();
+    while (!heads_[bucket].compare_exchange_strong(old_head, new_node)) {
+        new_node->next.store(old_head);
     }
+    new_node->next.store(old_head); // Set next pointer after successful insertion
 }
 
 template<typename T>

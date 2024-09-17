@@ -1,7 +1,7 @@
 
 #include "util/PaddedMutex.hpp"
 #include <vector>
-#include <memory>
+#include <cassert>
 
 #include "output_data_storage/PartitionManager.hpp"
 #include "output_data_storage/LockFreeList.hpp"

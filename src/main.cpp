@@ -7,6 +7,7 @@
 #include "worker/process_morsels.hpp"
 #include "input_preparation/BinaryRelation.hpp"
 #include "output_data_storage/StdVectorBasedPartitionManager.cpp"
+#include "output_data_storage/LockFreeListBasedPartitionManager.cpp"
 
 int main() {
     constexpr size_t morsel_size = 1'000'000;  // 1 million elements per morsel
@@ -22,13 +23,13 @@ int main() {
     auto time_start = std::chrono::high_resolution_clock::now();
 
     MorselManager<int> global_morsel_manager(relation_data, relation_size, morsel_size);
-    StdVectorBasedPartitionManager<int> global_partition_manager(num_partitions);
+    LockFreeListBasedPartitionManager<int> global_partition_manager(num_partitions);
 
 
     // Create threads and process data
     std::vector<std::thread> threads;
     for (size_t i = 0; i < num_threads; ++i) {
-        threads.emplace_back(process_morsels<StdVectorBasedPartitionManager<int>, int>, std::ref(global_morsel_manager),
+        threads.emplace_back(process_morsels<LockFreeListBasedPartitionManager<int>, int>, std::ref(global_morsel_manager),
                              std::ref(global_partition_manager));
     }
 
