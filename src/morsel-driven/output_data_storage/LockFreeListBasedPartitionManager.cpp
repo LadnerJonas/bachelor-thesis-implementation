@@ -1,18 +1,18 @@
 
-#include "util/PaddedMutex.hpp"
-#include <vector>
+#include "util/padded/PaddedMutex.hpp"
 #include <cassert>
+#include <vector>
 
-#include "output_data_storage/PartitionManager.hpp"
-#include "output_data_storage/LockFreeList.hpp"
+#include "morsel-driven/output_data_storage/LockFreeList.hpp"
+#include "morsel-driven/output_data_storage/PartitionManager.hpp"
 
 template<typename T>
 class LockFreeListBasedPartitionManager : public PartitionManagerBase<LockFreeListBasedPartitionManager<T>, T> {
 private:
     std::vector<LockFreeList<T>> partitions_;
+
 public:
-    explicit LockFreeListBasedPartitionManager(size_t num_partitions)
-            : partitions_(num_partitions) {}
+    explicit LockFreeListBasedPartitionManager(size_t num_partitions) : partitions_(num_partitions) {}
 
     void store_partition_impl(size_t partition_id, std::vector<T> &partition) {
         assert(partition_id < partitions_.size());
@@ -27,8 +27,5 @@ public:
         return std::make_pair(partition.data(), partition.size());
     }
 
-    size_t num_partitions_impl() const {
-        return partitions_.size();
-    }
-
+    size_t num_partitions_impl() const { return partitions_.size(); }
 };

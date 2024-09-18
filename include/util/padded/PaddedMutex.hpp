@@ -1,10 +1,10 @@
 #ifndef PADDEDMUTEX_HPP
 #define PADDEDMUTEX_HPP
 
-#include <new>
 #include <mutex>
+#include <new>
 
 struct alignas(std::hardware_destructive_interference_size) PaddedMutex {
     std::mutex mutex;
 };
-#endif //PADDEDMUTEX_HPP
+#endif// PADDEDMUTEX_HPP

@@ -1,32 +1,12 @@
 #ifndef LOCKFREELIST_HPP
 #define LOCKFREELIST_HPP
 
-#include <atomic>
-#include <vector>
-#include <memory>
+#include "util/padded/PaddedAtomic.hpp"
 #include <algorithm>
+#include <atomic>
 #include <cstdlib>
-
-template<typename T>
-struct alignas(std::hardware_destructive_interference_size) PaddedAtomic {
-    std::atomic<T> value;
-
-    PaddedAtomic() : value(nullptr) {}
-
-    explicit PaddedAtomic(const T &init) : value(init) {}
-
-    T load(std::memory_order order = std::memory_order_seq_cst) const {
-        return value.load(order);
-    }
-
-    void store(T desired, std::memory_order order = std::memory_order_seq_cst) {
-        value.store(desired, order);
-    }
-
-    bool compare_exchange_strong(T &expected, T desired, std::memory_order order = std::memory_order_seq_cst) {
-        return value.compare_exchange_strong(expected, desired, order);
-    }
-};
+#include <memory>
+#include <vector>
 
 template<typename T>
 class LockFreeList {
@@ -43,8 +23,7 @@ private:
         size_t size;
         std::atomic<Node *> next;
 
-        Node(const T *arr, size_t sz)
-                : array(arr ? new T[sz] : nullptr), size(sz), next(nullptr) {
+        Node(const T *arr, size_t sz) : array(arr ? new T[sz] : nullptr), size(sz), next(nullptr) {
             if (arr) {
                 std::copy(arr, arr + sz, array.get());
             }
@@ -58,10 +37,9 @@ private:
 };
 
 template<typename T>
-LockFreeList<T>::LockFreeList(size_t num_buckets)
-        : heads_(num_buckets), num_buckets_(num_buckets) {
+LockFreeList<T>::LockFreeList(size_t num_buckets) : heads_(num_buckets), num_buckets_(num_buckets) {
     for (size_t i = 0; i < num_buckets; ++i) {
-        heads_[i].store(nullptr); // Initially, all heads point to nullptr
+        heads_[i].store(nullptr);// Initially, all heads point to nullptr
     }
 }
 
@@ -72,7 +50,7 @@ size_t LockFreeList<T>::get_random_bucket() const {
 
 template<typename T>
 void LockFreeList<T>::insert(const T *array, size_t size) {
-    Node *new_node = new Node(array, size); // Allocate new node
+    Node *new_node = new Node(array, size);// Allocate new node
 
     size_t bucket = get_random_bucket();
     Node *old_head = heads_[bucket].load();
@@ -80,7 +58,7 @@ void LockFreeList<T>::insert(const T *array, size_t size) {
     while (!heads_[bucket].compare_exchange_strong(old_head, new_node)) {
         new_node->next.store(old_head);
     }
-    new_node->next.store(old_head); // Set next pointer after successful insertion
+    new_node->next.store(old_head);// Set next pointer after successful insertion
 }
 
 template<typename T>
@@ -100,4 +78,4 @@ std::vector<T> LockFreeList<T>::get_bundled_vector() const {
     return result;
 }
 
-#endif // LOCKFREELIST_HPP
+#endif// LOCKFREELIST_HPP

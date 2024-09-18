@@ -1,6 +1,6 @@
-#include "worker/process_morsels.hpp"
-#include "../output_data_storage/StdVectorBasedPartitionManager.cpp"
+#include "morsel-driven/worker/process_morsels.hpp"
 #include "../output_data_storage/LockFreeListBasedPartitionManager.cpp"
+#include "../output_data_storage/StdVectorBasedPartitionManager.cpp"
 
 // Worker function to process morsels and store partitions
 template<typename PM, typename T>
@@ -16,12 +16,13 @@ void process_morsels(MorselManager<T> &morsel_manager, PartitionManagerBase<PM, 
             partition_function(std::move(start[i]), thread_partitions, num_partitions);
         }
 
-        // Flush the thread-local partitions to the global partition manager if necessary
+        // Flush the thread-local partitions to the global partition manager if
+        // necessary
         /*
         for (size_t i = 0; i < num_partitions; ++i) {
             if (thread_partitions[i].size() >= size / num_partitions) {
-                global_partition_manager.store_partition(i, std::move(thread_partitions[i]));
-                thread_partitions[i].clear();
+                global_partition_manager.store_partition(i,
+        std::move(thread_partitions[i])); thread_partitions[i].clear();
             }
         }
         */
@@ -36,7 +37,9 @@ void process_morsels(MorselManager<T> &morsel_manager, PartitionManagerBase<PM, 
 }
 
 // Explicit template instantiation (if needed)
-template void process_morsels<StdVectorBasedPartitionManager<int>, int>(MorselManager<int> &morsel_manager,
-                                                                        PartitionManagerBase<StdVectorBasedPartitionManager<int>, int> &global_partition_manager);
-template void process_morsels<LockFreeListBasedPartitionManager<int>, int>(MorselManager<int> &morsel_manager,
-                                                                        PartitionManagerBase<LockFreeListBasedPartitionManager<int>, int> &global_partition_manager);
+template void process_morsels<StdVectorBasedPartitionManager<int>, int>(
+        MorselManager<int> &morsel_manager,
+        PartitionManagerBase<StdVectorBasedPartitionManager<int>, int> &global_partition_manager);
+template void process_morsels<LockFreeListBasedPartitionManager<int>, int>(
+        MorselManager<int> &morsel_manager,
+        PartitionManagerBase<LockFreeListBasedPartitionManager<int>, int> &global_partition_manager);
