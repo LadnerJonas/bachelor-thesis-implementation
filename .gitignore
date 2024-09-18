@@ -32,5 +32,15 @@
 *.app
 
 # custom
+# cmake
 cmake-build-*
+CMakeFiles
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+
+# clion
+.idea
+
+# generated input files
 input_data/data/*.bin
