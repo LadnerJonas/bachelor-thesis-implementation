@@ -1,11 +1,13 @@
 # src/CMakeLists.txt
 # Collect source files
 set(SOURCES
-        worker/process_morsels.cpp
+        morsel-driven/worker/process_morsels.cpp
         main.cpp
-        ../include/output_data_storage/LockFreeList.hpp
-        output_data_storage/StdVectorBasedPartitionManager.cpp
-        output_data_storage/LockFreeListBasedPartitionManager.cpp
+        ../include/morsel-driven/output_data_storage/LockFreeList.hpp
+        morsel-driven/output_data_storage/StdVectorBasedPartitionManager.cpp
+        morsel-driven/output_data_storage/LockFreeListBasedPartitionManager.cpp
+        ../include/util/padded/PaddedAtomic.hpp
+        ../include/in-place_sort/sort_partition.hpp
 )
 
 add_library(src_lib STATIC ${SOURCES})
