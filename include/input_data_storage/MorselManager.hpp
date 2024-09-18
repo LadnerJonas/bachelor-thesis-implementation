@@ -22,7 +22,7 @@ public:
 
         std::shared_ptr<T[]> morsel_start(data_, data_.get() + index);
         size_t actual_morsel_size = std::min(morsel_size_, total_elements_ - index);
-        return std::make_pair(std::move(morsel_start), actual_morsel_size);
+        return std::make_pair(morsel_start, actual_morsel_size);
     }
 
 private:
