@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.29.6)
 project(Implementierung)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -24,4 +24,15 @@ add_custom_target(format
         COMMAND find ${CMAKE_SOURCE_DIR} -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-format to reorder includes and format code"
+)
+
+# init input data
+# Path to the virtual environment's Python interpreter
+set(PYTHON_EXECUTABLE ${CMAKE_SOURCE_DIR}/venv/bin/python)
+
+# Define a custom target to run the create_input_data.py script
+add_custom_target(create_input_data ALL
+        COMMAND ${PYTHON_EXECUTABLE} create_input_data.py
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/input_data
+        COMMENT "Running input_data/create_input_data.py script"
 )
