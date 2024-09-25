@@ -5,15 +5,16 @@
 // Worker function to process morsels and store partitions
 template<typename PM, typename T>
 void process_morsels(MorselManager<T> &morsel_manager, PartitionManagerBase<PM, T> &global_partition_manager) {
-    size_t num_partitions = global_partition_manager.num_partitions();
+    const size_t num_partitions = global_partition_manager.num_partitions();
     std::vector<std::vector<T>> thread_partitions(num_partitions);
 
     while (auto morsel = morsel_manager.get_next_morsel()) {
         std::shared_ptr<T[]> start = morsel->first;
-        size_t size = morsel->second;
+        const size_t size = morsel->second;
 
         for (size_t i = 0; i < size; ++i) {
-            partition_function(std::move(start[i]), thread_partitions, num_partitions);
+            auto partition_id = partition_function(start[i], num_partitions);
+            thread_partitions[partition_id].push_back(start[i]);
         }
 
         // Flush the thread-local partitions to the global partition manager if
