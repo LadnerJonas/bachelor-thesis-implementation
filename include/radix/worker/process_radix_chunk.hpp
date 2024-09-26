@@ -28,12 +28,9 @@ void process_radix_chunk(T *chunk, size_t chunk_size, RadixPartitionManager<T, n
             std::memcpy(&partition_storage[index], batched_storage[partition_id], batch_size * sizeof(T));
             index += batch_size;
             batch_index[partition_id] = 0;
-        } else {
-            batched_storage[partition_id][batch_index[partition_id]++] = chunk[i];
         }
+        batched_storage[partition_id][batch_index[partition_id]++] = chunk[i];
 
-        //auto &[partition_storage, index] = storage_locations[partition_id];
-        //partition_storage[index++] = chunk[i];
     }
 
     // write out non-full batches
