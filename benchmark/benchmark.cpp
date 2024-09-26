@@ -45,7 +45,7 @@ void run_morsel_driven_partitioning(
     if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size\n";
 }
 
-template<typename T, size_t num_partitions>
+template<typename T, size_t num_partitions, size_t batch_size>
 void run_radix_partitioning(const std::string &relation_path,
                             const int num_threads) {
     BinaryRelation<T> relation(relation_path);
@@ -67,7 +67,7 @@ void run_radix_partitioning(const std::string &relation_path,
             thread_chunk_size = relation_size - current;
         }
         threads.emplace_back(
-                process_radix_chunk<T, num_partitions>, std::move(chunk), thread_chunk_size,
+                process_radix_chunk<T, num_partitions, batch_size>, std::move(chunk), thread_chunk_size,
                 std::ref(global_partition_manager));
         current += thread_chunk_size;
     }
@@ -87,6 +87,8 @@ void run_radix_partitioning(const std::string &relation_path,
 
 
 constexpr size_t num_partitions = 4;
+constexpr size_t batch_size = 1024;
+
 int main() {
     bool run_binary_relation_benchmark = false;
     bool run_sort_based_benchmark = false;
@@ -173,13 +175,14 @@ int main() {
     if (run_radix_based_benchmark) {
         std::cout << "\nRadix partitioning\n";
         params.setParam("impl", "RadixPartitionManager");
+        params.setParam("write_out_batch", batch_size);
 
         for (auto num_threads = 1; num_threads <= max_threads; ++num_threads) {
             params.setParam("threads", num_threads);
 
             {
                 PerfEventBlock e(1'000'000, params, true);
-                run_radix_partitioning<int, num_partitions>(relation_path, num_threads);
+                run_radix_partitioning<int, num_partitions, batch_size>(relation_path, num_threads);
             }
         }
     }
