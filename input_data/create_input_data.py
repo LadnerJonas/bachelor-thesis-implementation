@@ -37,6 +37,7 @@ def init_data_folder():
         os.makedirs('./data')
 
     relations = {
+        'relation_int_small.bin': ('int', 5_000),
         'relation_int.bin': ('int', 250_000_000),
         'relation_float.bin': ('float', 125_000_000),
         'relation_double.bin': ('double', 62_500_000),
