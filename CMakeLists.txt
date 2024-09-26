@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29.6)
+cmake_minimum_required(VERSION 3.20.4)
 project(Implementierung)
 
 set(CMAKE_CXX_STANDARD 23)
