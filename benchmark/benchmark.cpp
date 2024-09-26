@@ -1,5 +1,6 @@
 #include <execution>
 #include <iostream>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -11,9 +12,11 @@
 #include "../src/morsel-driven/output_data_storage/LockFreeListBasedPartitionManager.cpp"
 #include "../src/morsel-driven/output_data_storage/StdVectorBasedPartitionManager.cpp"
 #include "in-place_sort/sort_partition.hpp"
+#include "radix/output_data_storage/RadixPartitionManager.hpp"
+#include "radix/worker/process_radix_chunk.hpp"
 
 template<typename PM>
-void run_partitioning(
+void run_morsel_driven_partitioning(
         const std::string &relation_path, const size_t morsel_size, const size_t num_partitions,
         const int num_threads) {
     BinaryRelation<int> relation(relation_path);
@@ -42,14 +45,54 @@ void run_partitioning(
     if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size\n";
 }
 
+template<typename T, size_t num_partitions>
+void run_radix_partitioning(const std::string &relation_path,
+                            const int num_threads) {
+    BinaryRelation<T> relation(relation_path);
+    auto relation_data = relation.get_data();
+    auto relation_size = relation.get_size();
 
+    RadixPartitionManager<T, num_partitions> global_partition_manager(num_threads);
+
+    auto chunk_size = relation_size / num_threads;
+    std::vector<std::thread> threads;
+    auto start = relation_data.get();
+    size_t current = 0;
+    for (size_t i = 0; i < num_threads; ++i) {
+        auto chunk = start + current;
+        auto thread_chunk_size = std::min(chunk_size, relation_size - current);
+        if (i == num_threads - 1) {
+            // this is necessary in case relation_size is not divisible by num_threads
+            // the last thread will additionally process the remaining elements
+            thread_chunk_size = relation_size - current;
+        }
+        threads.emplace_back(
+                process_radix_chunk<T, num_partitions>, std::move(chunk), thread_chunk_size,
+                std::ref(global_partition_manager));
+        current += thread_chunk_size;
+    }
+
+    for (auto &thread: threads) {
+        thread.join();
+    }
+
+    int total_elements = 0;
+    for (size_t i = 0; i < global_partition_manager.num_partitions(); ++i) {
+        auto [data, size] = global_partition_manager.get_partition(i);
+        total_elements += size;
+    }
+
+    if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size " << total_elements << " " << relation_size << std::endl;
+}
+
+
+constexpr size_t num_partitions = 4;
 int main() {
     bool run_binary_relation_benchmark = false;
-    bool run_sort_based_benchmark = true;
-    bool run_morsel_based_benchmark = true;
+    bool run_sort_based_benchmark = false;
+    bool run_morsel_based_benchmark = false;
+    bool run_radix_based_benchmark = true;
 
-    constexpr size_t morsel_size = 4096;
-    constexpr size_t num_partitions = 1024;
     auto max_threads = std::thread::hardware_concurrency();
     std::string relation_path = "../../input_data/data/relation_int.bin";
 
@@ -102,6 +145,8 @@ int main() {
 
     if (run_morsel_based_benchmark) {
         std::cout << "\nMorsel-driven partitioning\n";
+
+        constexpr size_t morsel_size = 4096;
         params.setParam("morsel_size", morsel_size);
         // Loop over different thread counts
         for (auto num_threads = 1; num_threads <= max_threads; ++num_threads) {
@@ -113,14 +158,28 @@ int main() {
             {
                 params.setParam("impl", "StdVectorBasedPartitionManager   ");
                 PerfEventBlock e(1'000'000, params, printHeader);
-                run_partitioning<StdVectorBasedPartitionManager<int>>(
+                run_morsel_driven_partitioning<StdVectorBasedPartitionManager<int>>(
                         relation_path, morsel_size, num_partitions, num_threads);
             }
             {
                 params.setParam("impl", "LockFreeListBasedPartitionManager");
                 PerfEventBlock e(1'000'000, params, false);
-                run_partitioning<LockFreeListBasedPartitionManager<int>>(
+                run_morsel_driven_partitioning<LockFreeListBasedPartitionManager<int>>(
                         relation_path, morsel_size, num_partitions, num_threads);
+            }
+        }
+    }
+
+    if (run_radix_based_benchmark) {
+        std::cout << "\nRadix partitioning\n";
+        params.setParam("impl", "RadixPartitionManager");
+
+        for (auto num_threads = 1; num_threads <= max_threads; ++num_threads) {
+            params.setParam("threads", num_threads);
+
+            {
+                PerfEventBlock e(1'000'000, params, true);
+                run_radix_partitioning<int, num_partitions>(relation_path, num_threads);
             }
         }
     }
