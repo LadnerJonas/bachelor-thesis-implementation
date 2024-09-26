@@ -21,9 +21,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native ${CMAKE_CXX_FLAGS}")
 
 # Add a custom target to format all source files with clang-format
 add_custom_target(format
-        COMMAND find ${CMAKE_SOURCE_DIR} -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
+        COMMAND git diff --name-only -- '*.cpp' '*.hpp' > modified_files.txt
+        COMMAND cat modified_files.txt
+        COMMAND clang-format -i `cat modified_files.txt`
+
+        COMMAND rm modified_files.txt
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running clang-format to reorder includes and format code"
+        COMMENT "Running clang-format on modified .cpp and .hpp files"
 )
 
 # init input data
