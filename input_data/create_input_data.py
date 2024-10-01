@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from multiprocessing import Pool, cpu_count
 
 def generate_int_pairs(num_pairs):
     a = np.random.randint(0, 1000001, size=num_pairs, dtype=np.int32)
@@ -39,6 +38,7 @@ def init_data_folder():
     relations = {
         'relation_int_small.bin': ('int', 5_000),
         'relation_int.bin': ('int', 250_000_000),
+        'relation_int_large.bin': ('int', 4*250_000_000),
         'relation_float.bin': ('float', 125_000_000),
         'relation_double.bin': ('double', 62_500_000),
     }
@@ -46,8 +46,10 @@ def init_data_folder():
     args = [(os.path.join('./data', file_name), num_pairs, data_type)
             for file_name, (data_type, num_pairs) in relations.items()]
 
-    with Pool(processes=cpu_count()) as pool:
-        pool.map(create_binary_relation, args)
+    for arg in args:
+        print(f"Creating {arg[0]}")
+        create_binary_relation(arg)
+        print(f"Created {arg[0]}")
 
 if __name__ == "__main__":
     init_data_folder()
