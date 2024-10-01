@@ -43,5 +43,8 @@ build
 # clion
 .idea
 
+#cppcheck
+cppcheck/
+
 # generated input files
 input_data/data/*.bin
