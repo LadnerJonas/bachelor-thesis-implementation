@@ -14,6 +14,7 @@
 #include "in-place_sort/sort_partition.hpp"
 #include "radix/output_data_storage/RadixPartitionManager.hpp"
 #include "radix/worker/process_radix_chunk.hpp"
+#include "radix/worker/process_radix_chunk_futures.hpp"
 
 template<typename T, typename PM>
 void run_morsel_driven_partitioning(
@@ -32,7 +33,7 @@ void run_morsel_driven_partitioning(
         thread.join();
     }
 
-    int total_elements = 0;
+    size_t total_elements = 0;
     for (size_t i = 0; i < global_partition_manager.num_partitions(); ++i) {
         auto [data, size] = global_partition_manager.get_partition(i);
         total_elements += size;
@@ -41,8 +42,8 @@ void run_morsel_driven_partitioning(
     if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size\n";
 }
 
-template<typename T, size_t num_partitions, size_t batch_size>
-void run_radix_partitioning(const std::shared_ptr<T[]> relation_data, const size_t relation_size,
+template<typename T, size_t num_partitions, typename FUNC_PROCESS_RADIX_CHUNK>
+void run_radix_partitioning(FUNC_PROCESS_RADIX_CHUNK process_radix_chunk, const std::shared_ptr<T[]> relation_data, const size_t relation_size,
                             const int num_threads) {
 
     RadixPartitionManager<T, num_partitions> global_partition_manager(num_threads);
@@ -59,9 +60,9 @@ void run_radix_partitioning(const std::shared_ptr<T[]> relation_data, const size
             // the last thread will additionally process the remaining elements
             thread_chunk_size = relation_size - current;
         }
-        threads.emplace_back(
-                process_radix_chunk<T, num_partitions, batch_size>, std::move(chunk), thread_chunk_size,
-                std::ref(global_partition_manager));
+        threads.emplace_back([=, &global_partition_manager] {
+            process_radix_chunk(chunk, thread_chunk_size, global_partition_manager);
+        });
         current += thread_chunk_size;
     }
 
@@ -79,18 +80,18 @@ void run_radix_partitioning(const std::shared_ptr<T[]> relation_data, const size
 }
 
 
-constexpr size_t num_partitions = 4;
-constexpr size_t radix_write_out_batch_size = 1024;
+constexpr size_t num_partitions = 8;
+constexpr size_t radix_write_out_batch_size = 8 * 9096 / num_partitions;
 
 int main() {
     bool run_binary_relation_benchmark = false;
-    bool run_sort_based_benchmark = true;
+    bool run_sort_based_benchmark = false;
     bool run_morsel_based_benchmark = true;
     bool run_radix_based_benchmark = true;
 
     auto max_threads = std::thread::hardware_concurrency();
 
-    std::string relation_path = "../../input_data/data/relation_int.bin";
+    std::string relation_path = "../../input_data/data/relation_int_large.bin";
     BinaryRelation<int> relation(relation_path);
     const auto relation_data = relation.get_data();
     const auto relation_size = relation.get_size();
@@ -110,7 +111,7 @@ int main() {
         std::cout << "relation_size: " << relation_size << std::endl;
         std::cout << "relation_data[0]: " << relation_data[0] << std::endl;
     }
-    params.setParam("benchmark", "Partitioning Benchmark 1.9GB ints");
+    params.setParam("benchmark", "Partitioning Benchmark 7,5GB ints");
     params.setParam("num_partitions", num_partitions);
 
     if (run_sort_based_benchmark) {
@@ -173,8 +174,14 @@ int main() {
             params.setParam("threads", num_threads);
 
             {
-                PerfEventBlock e(1'000'000, params, true);
-                run_radix_partitioning<int, num_partitions, radix_write_out_batch_size>(relation_data, relation_size, num_threads);
+                params.setParam("method", "process_radix_chunk        ");
+                PerfEventBlock e(1'000'000, params, num_threads == 1);
+                run_radix_partitioning<int, num_partitions>(process_radix_chunk<int, num_partitions, radix_write_out_batch_size>, relation_data, relation_size, num_threads);
+            }
+            {
+                params.setParam("method", "process_radix_chunk_futures");
+                PerfEventBlock e(1'000'000, params, false);
+                run_radix_partitioning<int, num_partitions>(process_radix_chunk_futures<int, num_partitions, radix_write_out_batch_size>, relation_data, relation_size, num_threads);
             }
         }
     }
