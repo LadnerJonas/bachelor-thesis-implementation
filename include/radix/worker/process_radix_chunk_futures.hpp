@@ -12,8 +12,8 @@ void process_radix_chunk_futures(T *chunk, size_t chunk_size, RadixPartitionMana
 
 
     std::array<size_t, num_partitions> histogram = {0};
-    for (int i = 0; i < chunk_size; i++) {
-        const auto partition_id = partition_function(chunk[i], num_partitions);
+    for (size_t i = 0; i < chunk_size; i++) {
+        const auto partition_id = partition_function<T, num_partitions>(chunk[i]);
         ++histogram[partition_id];
     }
 
@@ -26,7 +26,7 @@ void process_radix_chunk_futures(T *chunk, size_t chunk_size, RadixPartitionMana
 
 
     for (size_t i = 0; i < chunk_size; i++) {
-        const auto partition_id = partition_function(chunk[i], num_partitions);
+        const auto partition_id = partition_function<T, num_partitions>(chunk[i]);
 
         if (batch_index[partition_id] == write_out_batch_size) {
             if (storage_locations.empty()) {

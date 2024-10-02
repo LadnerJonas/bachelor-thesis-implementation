@@ -11,15 +11,15 @@ void process_radix_chunk(T *chunk, size_t chunk_size, RadixPartitionManager<T, n
 
 
     std::array<size_t, num_partitions> histogram = {};
-    for (int i = 0; i < chunk_size; i++) {
-        const auto partition_id = partition_function(chunk[i], num_partitions);
+    for (size_t i = 0; i < chunk_size; i++) {
+        const auto partition_id = partition_function<T, num_partitions>(chunk[i]);
         ++histogram[partition_id];
     }
     global_partition_manager.register_thread_histogram(histogram);
     std::vector<std::pair<T *, size_t>> storage_locations;
 
     for (size_t i = 0; i < chunk_size; i++) {
-        const auto partition_id = partition_function(chunk[i], num_partitions);
+        const auto partition_id = partition_function<T, num_partitions>(chunk[i]);
 
         if (batch_index[partition_id] == write_out_batch_size) {
             if (storage_locations.empty())
