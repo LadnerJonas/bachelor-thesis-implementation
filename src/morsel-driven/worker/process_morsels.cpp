@@ -16,17 +16,6 @@ void process_morsels(MorselManager<T> &morsel_manager, PartitionManagerBase<PM, 
             auto partition_id = partition_function(start[i], num_partitions);
             thread_partitions[partition_id].push_back(start[i]);
         }
-
-        // Flush the thread-local partitions to the global partition manager if
-        // necessary
-        /*
-        for (size_t i = 0; i < num_partitions; ++i) {
-            if (thread_partitions[i].size() >= size / num_partitions) {
-                global_partition_manager.store_partition(i,
-        std::move(thread_partitions[i])); thread_partitions[i].clear();
-            }
-        }
-        */
     }
 
     // Final flush to global partition manager
