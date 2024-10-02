@@ -151,7 +151,7 @@ int main() {
         constexpr size_t morsel_size = 4096 * 100;
         params.setParam("morsel_size", morsel_size);
         // Loop over different thread counts
-        for (size_t num_threads = 1; num_threads <= max_threads; ++num_threads) {
+        for (size_t num_threads = 1; num_threads <= max_threads; num_threads+=1+(num_threads>=4)) {
             // for (auto num_threads = max_threads; num_threads >= 1; --num_threads) {
             params.setParam("threads", num_threads);
 
@@ -177,7 +177,7 @@ int main() {
         params.setParam("impl", "RadixPartitionManager");
         params.setParam("write_out_batch", radix_write_out_batch_size);
 
-        for (size_t num_threads = 1; num_threads <= max_threads; ++num_threads) {
+        for (size_t num_threads = 1; num_threads <= max_threads; num_threads+=1+(num_threads>=4)) {
             params.setParam("threads", num_threads);
 
             {
