@@ -19,7 +19,7 @@
 template<typename T, typename PM>
 void run_morsel_driven_partitioning(
         const std::shared_ptr<T[]> relation_data, const size_t relation_size, const size_t morsel_size, const size_t num_partitions,
-        const int num_threads) {
+        const size_t num_threads) {
     MorselManager<T> global_morsel_manager(relation_data, relation_size, morsel_size);
     PM global_partition_manager(num_partitions);
 
@@ -44,7 +44,7 @@ void run_morsel_driven_partitioning(
 
 template<typename T, size_t num_partitions, typename FUNC_PROCESS_RADIX_CHUNK>
 void run_radix_partitioning(FUNC_PROCESS_RADIX_CHUNK process_radix_chunk, const std::shared_ptr<T[]> relation_data, const size_t relation_size,
-                            const int num_threads) {
+                            const size_t num_threads) {
 
     RadixPartitionManager<T, num_partitions> global_partition_manager(num_threads);
 
@@ -70,7 +70,7 @@ void run_radix_partitioning(FUNC_PROCESS_RADIX_CHUNK process_radix_chunk, const 
         thread.join();
     }
 
-    int total_elements = 0;
+    size_t total_elements = 0;
     for (size_t i = 0; i < global_partition_manager.num_partitions(); ++i) {
         auto [data, size] = global_partition_manager.get_partition(i);
         total_elements += size;
@@ -85,13 +85,13 @@ constexpr size_t radix_write_out_batch_size = 8 * 9096 / num_partitions;
 
 int main() {
     bool run_binary_relation_benchmark = false;
-    bool run_sort_based_benchmark = false;
+    bool run_sort_based_benchmark = true;
     bool run_morsel_based_benchmark = true;
     bool run_radix_based_benchmark = true;
 
     auto max_threads = std::thread::hardware_concurrency();
 
-    std::string relation_path = "../../input_data/data/relation_int_large.bin";
+    std::string relation_path = "../../input_data/data/relation_int_small.bin";
     BinaryRelation<int> relation(relation_path);
     const auto relation_data = relation.get_data();
     const auto relation_size = relation.get_size();
@@ -122,8 +122,8 @@ int main() {
 
             PerfEventBlock e(1'000'000, params, true);
             auto partition_boundaries = sort_partition<int>(data, num_partitions, std::execution::seq);
-            auto total_elements = std::accumulate(partition_boundaries.begin(), partition_boundaries.end(), 0,
-                                                  [](int sum, const std::pair<int, int> &p) { return sum + p.second - p.first; });
+            size_t total_elements = std::accumulate(partition_boundaries.begin(), partition_boundaries.end(), 0,
+                                                    [](int sum, const std::pair<int, int> &p) { return sum + p.second - p.first; });
             if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size\n";
         }
         {
@@ -132,8 +132,8 @@ int main() {
 
             PerfEventBlock e(1'000'000, params, false);
             auto partition_boundaries = sort_partition<int>(data, num_partitions, std::execution::par);
-            auto total_elements = std::accumulate(partition_boundaries.begin(), partition_boundaries.end(), 0,
-                                                  [](int sum, const std::pair<int, int> &p) { return sum + p.second - p.first; });
+            size_t total_elements = std::accumulate(partition_boundaries.begin(), partition_boundaries.end(), 0,
+                                                    [](int sum, const std::pair<int, int> &p) { return sum + p.second - p.first; });
             if (total_elements != relation_size) std::cerr << "Error: Total elements processed does not match relation size\n";
         }
     }
@@ -144,7 +144,7 @@ int main() {
         constexpr size_t morsel_size = 4096 * 100;
         params.setParam("morsel_size", morsel_size);
         // Loop over different thread counts
-        for (auto num_threads = 1; num_threads <= max_threads; ++num_threads) {
+        for (size_t num_threads = 1; num_threads <= max_threads; ++num_threads) {
             // for (auto num_threads = max_threads; num_threads >= 1; --num_threads) {
             params.setParam("threads", num_threads);
 
@@ -170,7 +170,7 @@ int main() {
         params.setParam("impl", "RadixPartitionManager");
         params.setParam("write_out_batch", radix_write_out_batch_size);
 
-        for (auto num_threads = 1; num_threads <= max_threads; ++num_threads) {
+        for (size_t num_threads = 1; num_threads <= max_threads; ++num_threads) {
             params.setParam("threads", num_threads);
 
             {
