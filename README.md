@@ -1,15 +1,11 @@
 # Implementation of the Bachelor Thesis
 
-This project implements a C++ application using CMake for building, with support for benchmarking, testing, and input data initialization using Python. The project includes features like code formatting, debug/release configurations, and Python environment management.
+This project implements an efficient shuffle operator for streaming database systems.
 
 ## Table of Contents
 - [Cloning the Repository](#cloning-the-repository)
 - [Setting up the Python Environment](#setting-up-the-python-environment)
-- [Running Input Data Initialization](#running-input-data-initialization)
-- [Building the Project](#building-the-project)
-- [Formatting Code](#formatting-code)
-- [Running Tests](#running-tests)
-- [Running Benchmarks](#running-benchmarks)
+- [Prototype](#prototype)
 
 ## Cloning the Repository
 
@@ -28,3 +24,8 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Prototype
+The prototype implements a benchmark to compare in-memory partition algorithms.
+### Running the Prototype
+Please follow the instruction found in the prototype/README.md file to run the prototype.
