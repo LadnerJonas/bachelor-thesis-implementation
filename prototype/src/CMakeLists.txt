@@ -19,4 +19,4 @@ add_executable(src ${SOURCES})
 # target_link_libraries(MyExecutable PRIVATE pthread)
 
 # Optionally, set include directories for this target
-target_include_directories(src PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(src PRIVATE ../include)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20.4)
-project(Implementierung)
+project(prototype)
 
 set(CMAKE_CXX_STANDARD 23)
 
@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(include)
 
 add_subdirectory(src)
 add_subdirectory(test)

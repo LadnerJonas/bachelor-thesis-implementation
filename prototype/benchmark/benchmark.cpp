@@ -92,13 +92,13 @@ constexpr size_t radix_write_out_batch_size = 8 * 9096 / num_partitions;
 
 int main() {
     bool run_binary_relation_benchmark = false;
-    bool run_sort_based_benchmark = true;
+    bool run_sort_based_benchmark = false;
     bool run_morsel_based_benchmark = true;
     bool run_radix_based_benchmark = true;
 
     auto max_threads = std::thread::hardware_concurrency();
 
-    std::string relation_path = "../../input_data/data/relation_int_large.bin";
+    std::string relation_path = "../../input_data/data/relation_int_small.bin";
     BinaryRelation<int> relation(relation_path);
     const auto relation_data = relation.get_data();
     const auto relation_size = relation.get_size();

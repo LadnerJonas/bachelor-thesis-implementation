@@ -1,4 +1,4 @@
-# Implementierung
+# Implementation of the Bachelor Thesis
 
 This project implements a C++ application using CMake for building, with support for benchmarking, testing, and input data initialization using Python. The project includes features like code formatting, debug/release configurations, and Python environment management.
 
@@ -27,49 +27,4 @@ To set up the Python environment, run the following commands:
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-## Building the Project
-To build the project, run the following commands:
-
-```bash
-mkdir -p build
-cd build
-cmake ..
-cmake --build .
-```
-This will build the project in the `build` directory and already create the necessary input files.  
-
-
-## Running Input Data Initialization
-To generate input data for the application, run the following command:
-
-```bash
-cd build
-cmake --build . -t create_input_data
-```
-
-
-## Formatting Code
-To format the code, run the following command:
-
-```bash
-cd build
-cmake --build . -t format
-```
-
-## Running Tests
-To run the tests, run the following command:
-
-```bash
-cd build
-cmake --build . -t test
-```
-
-## Running Benchmarks
-To run the benchmarks, run the following command:
-
-```bash
-cd build
-cmake --build . -t benchmark
 ```

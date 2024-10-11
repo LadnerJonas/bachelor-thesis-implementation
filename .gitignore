@@ -47,4 +47,4 @@ build
 cppcheck/
 
 # generated input files
-input_data/data/*.bin
+prototype/input_data/data/*.bin

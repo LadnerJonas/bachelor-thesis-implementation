@@ -32,8 +32,8 @@ def create_binary_relation(args):
     write_pairs(file_path, pairs)
 
 def init_data_folder():
-    if not os.path.exists('./data'):
-        os.makedirs('./data')
+    if not os.path.exists('data'):
+        os.makedirs('data')
 
     relations = {
         'relation_int_small.bin': ('int', 5_000),
@@ -43,7 +43,7 @@ def init_data_folder():
         'relation_double.bin': ('double', 62_500_000),
     }
 
-    args = [(os.path.join('./data', file_name), num_pairs, data_type)
+    args = [(os.path.join('data', file_name), num_pairs, data_type)
             for file_name, (data_type, num_pairs) in relations.items()]
 
     for arg in args:
