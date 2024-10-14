@@ -1,3 +1,8 @@
 [submodule "benchmark/external/perfevent"]
 	path = benchmark/external/perfevent
-	url = git@github.com:viktorleis/perfevent.git
+	url = https://github.com/viktorleis/perfevent.git
+
+[submodule "prototype/benchmark/external/perfevent"]
+	path = prototype/benchmark/external/perfevent
+	url = https://github.com/viktorleis/perfevent.git
+

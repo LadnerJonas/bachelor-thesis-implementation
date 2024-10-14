@@ -24,14 +24,3 @@ add_custom_target(format
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-format on modified .cpp and .hpp files"
 )
-
-# init input data
-# Path to the virtual environment's Python interpreter
-set(PYTHON_EXECUTABLE ${CMAKE_SOURCE_DIR}/../venv/bin/python)
-
-# Define a custom target to run the create_input_data.py script
-add_custom_target(create_input_data ALL
-        COMMAND ${PYTHON_EXECUTABLE} create_input_data.py
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/input_data
-        COMMENT "Running input_data/create_input_data.py script"
-)
