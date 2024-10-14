@@ -1,0 +1,6 @@
+Checks:          'modernize-use-auto, modernize-use-nullptr, readability-identifier-naming.IdentifierPattern, readability-braces-around-statements, bugprone-suspicious-semicolon, performance-for-range-copy'
+CheckOptions:
+  - key:           readability-identifier-naming.IdentifierPattern
+    value:         '^[a-z_][a-z0-9_]*$'
+  - key:           readability-braces-around-statements.MinStatements
+    value:         '1'

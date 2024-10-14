@@ -24,3 +24,19 @@ add_custom_target(format
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-format on modified .cpp and .hpp files"
 )
+
+# Custom target to run clang-tidy on the modified files
+add_custom_target(tidy
+        COMMAND git diff --name-only -- '*.cpp' '*.hpp' > modified_files.txt
+        COMMAND cat modified_files.txt
+        COMMAND clang-tidy -fix -fix-errors `cat modified_files.txt` -- -I${CMAKE_SOURCE_DIR}/include
+        COMMAND rm modified_files.txt
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Running clang-tidy on modified .cpp and .hpp files"
+)
+
+add_custom_target(clang_format_tidy
+        COMMAND ${CMAKE_COMMAND} --build . --target format
+        COMMAND ${CMAKE_COMMAND} --build . --target tidy
+        COMMENT "Running clang-format and clang-tidy on modified .cpp and .hpp files"
+)
