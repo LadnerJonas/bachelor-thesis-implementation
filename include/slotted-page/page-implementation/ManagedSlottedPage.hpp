@@ -7,6 +7,19 @@
 
 template<typename T>
 class ManagedSlottedPage {
+    struct SlotInfo {
+        size_t offset;
+        typename T::KeyType key;
+
+        SlotInfo(size_t offset, typename T::KeyType key) : offset(offset), key(key) {}
+    };
+
+    size_t page_size;
+    size_t free_space_offset;
+    size_t num_slots;
+    std::unique_ptr<char[]> page_data;
+    std::vector<SlotInfo> slots;
+
 public:
     explicit ManagedSlottedPage(size_t page_size)
         : page_size(page_size), free_space_offset(page_size), num_slots(0) {
@@ -45,18 +58,7 @@ public:
         }
         return all_tuples;
     }
-
-private:
-    struct SlotInfo {
-        size_t offset;
-        typename T::KeyType key;
-
-        SlotInfo(size_t offset, typename T::KeyType key) : offset(offset), key(key) {}
-    };
-
-    size_t page_size;
-    size_t free_space_offset;
-    size_t num_slots;
-    std::unique_ptr<char[]> page_data;
-    std::vector<SlotInfo> slots;
+    size_t get_num_slots() const {
+        return num_slots;
+    }
 };

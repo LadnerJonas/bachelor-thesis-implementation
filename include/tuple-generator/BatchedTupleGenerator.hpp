@@ -28,7 +28,7 @@ public:
         auto *p = reinterpret_cast<uint64_t *>(&batch);
         assert(reinterpret_cast<std::uintptr_t>(p) % 32 == 0 && "Pointer not 32-byte aligned!");
 
-        // AVX2 check for SIMD support
+// AVX2 check for SIMD support
 #ifdef __AVX2__
         // AVX2 allows processing 4 `uint64_t` at a time (256 bits)
         for (; i + 3 < num_of_4_bytes; i += 4) {
@@ -37,11 +37,6 @@ public:
 
             // Store the 4 64-bit random numbers in the memory
             _mm256_storeu_si256(reinterpret_cast<__m256i *>(&p[i]), random_numbers);
-        }
-#else
-        // Scalar fallback for non-AVX2 systems
-        for (; i < num_of_4_bytes; ++i) {
-            p[i] = gen();
         }
 #endif
 
