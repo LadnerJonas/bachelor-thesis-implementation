@@ -6,13 +6,15 @@
 #include <optional>
 #include <vector>
 
+#include "slotted-page/page-implementation/SlotInfo.hpp"
+
 template<typename T>
 class RawSlottedPage {
 public:
     explicit RawSlottedPage(size_t page_size)
         : page_size(page_size), tuple_count(0), free_space_offset(page_size) {
-        page_data = std::shared_ptr<char[]>(new char[page_size], std::default_delete<char[]>());
-        size_t max_tuples = page_size / (sizeof(T) + sizeof(SlotInfo));
+        size_t max_tuples = page_size / (sizeof(T) + sizeof(SlotInfo<T>));
+        page_data = std::shared_ptr<char[]>(new char[max_tuples * sizeof(T)], std::default_delete<char[]>());
         slots.reserve(max_tuples);
     }
 
@@ -27,7 +29,7 @@ public:
 
         std::memcpy(page_data.get() + offset, &tuple, sizeof(T));
 
-        slots[slot_index] = SlotInfo(offset, tuple.getKey());
+        slots[slot_index] = SlotInfo<T>(offset, tuple.getKey());
         return true;
     }
     void update_tuple_count(size_t count) {
@@ -60,16 +62,9 @@ public:
     }
 
 private:
-    struct SlotInfo {
-        size_t offset;
-        typename T::KeyType key;
-
-        SlotInfo(size_t off, typename T::KeyType k) : offset(off), key(k) {}
-    };
-
     size_t page_size;
     std::atomic<size_t> tuple_count;
     size_t free_space_offset;
     std::shared_ptr<char[]> page_data;
-    std::vector<SlotInfo> slots;
+    std::vector<SlotInfo<T>> slots;
 };

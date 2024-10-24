@@ -6,9 +6,9 @@
 #include <memory>
 #include <random>
 
-template<typename T, size_t batch_size = 16>
+template<typename T, size_t batch_size = 2048>
 class BatchedTupleGenerator {
-    T batch[batch_size];
+    alignas(32) T batch[batch_size];
     size_t max_generated_tuples;
     size_t generated_tuples = 0;
     size_t current_batch_index = 0;

@@ -5,20 +5,15 @@
 #include <optional>
 #include <vector>
 
+#include "slotted-page/page-implementation/SlotInfo.hpp"
+
 template<typename T>
 class ManagedSlottedPage {
-    struct SlotInfo {
-        size_t offset;
-        typename T::KeyType key;
-
-        SlotInfo(size_t offset, typename T::KeyType key) : offset(offset), key(key) {}
-    };
-
     size_t page_size;
     size_t free_space_offset;
     size_t num_slots;
     std::unique_ptr<char[]> page_data;
-    std::vector<SlotInfo> slots;
+    std::vector<SlotInfo<T>> slots;
 
 public:
     explicit ManagedSlottedPage(size_t page_size)
@@ -28,7 +23,7 @@ public:
 
     bool add_tuple(const T &tuple) {
         size_t tuple_size = sizeof(T);
-        if (free_space_offset - (num_slots + 1) * sizeof(SlotInfo) < tuple_size) {
+        if (free_space_offset - (num_slots + 1) * sizeof(SlotInfo<T>) < tuple_size) {
             return false;
         }
         free_space_offset -= tuple_size;
