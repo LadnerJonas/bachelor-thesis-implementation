@@ -66,12 +66,9 @@ public:
         std::lock_guard lock(global_histogram_mutex);
         std::vector<std::pair<std::shared_ptr<RawSlottedPage<T>>, size_t>> thread_write_info(partitions);
 
-        // For each partition, calculate which pages and how many tuples the thread should write
         for (size_t partition = 0; partition < partitions; ++partition) {
             size_t tuples_to_write = local_histogram[partition];
             size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-
-            std::vector<PageWriteInfo<T>> write_page_infos;
 
             while (tuples_to_write > 0) {
                 auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
@@ -80,7 +77,7 @@ public:
 
                 PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 
-                write_page_infos.emplace_back(write_info);
+                thread_write_info[partition].emplace_back(write_info);
                 tuples_to_write -= tuples_for_page;
 
                 partitions_data[partition].current_tuple_offset += tuples_for_page;
@@ -91,7 +88,6 @@ public:
                 }
             }
 
-            thread_write_info[partition] = write_page_infos;
         }
 
         return thread_write_info;
