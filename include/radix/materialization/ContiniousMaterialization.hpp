@@ -10,7 +10,7 @@ class ContinuousMaterialization {
     size_t size;
 
 public:
-    explicit ContinuousMaterialization(size_t size) : size(size), data(new T[size], std::default_delete<T[]>()) {}
+    explicit ContinuousMaterialization(size_t size) : size(size), data(std::make_shared<T[]>(size)) {}
     void materialize() {
         BatchedTupleGenerator<T> generator(size, 42);
         while (true) {

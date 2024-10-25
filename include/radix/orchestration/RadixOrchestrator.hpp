@@ -20,7 +20,7 @@ public:
         auto time_start = std::chrono::high_resolution_clock::now();
         materialization.materialize();
         auto time_end = std::chrono::high_resolution_clock::now();
-        std::cout << "Materialization time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms" << std::endl;
+        //std::cout << "Materialization time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms" << std::endl;
         auto data = materialization.get_data();
         for (size_t i = 0; i < num_threads; ++i) {
             size_t chunk_size = num_tuples / num_threads;
@@ -28,8 +28,9 @@ public:
             if (size_t remainder = num_tuples % num_threads; i < remainder) {
                 ++chunk_size;
             }
-            threads.emplace_back([this, data, i, chunk_size]() {
-                process_radix_chunk(page_manager, data.get() + i * chunk_size, chunk_size);
+            const auto raw_pointer = data.get();
+            threads.emplace_back([this, raw_pointer, i, chunk_size]() {
+                process_radix_chunk(page_manager, raw_pointer + i * chunk_size, chunk_size);
             });
         }
         for (auto &thread: threads) {

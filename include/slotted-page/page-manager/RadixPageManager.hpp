@@ -24,9 +24,10 @@ class RadixPageManager {
     std::array<PaddedMutex, partitions> partition_locks;
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
+    std::once_flag distribute_flag;
 
     void allocate_new_page(size_t partition) {
-        partitions_data[partition].pages.emplace_back(std::make_unique<RawSlottedPage<T>>(page_size));
+        partitions_data[partition].pages.emplace_back(std::make_shared<RawSlottedPage<T>>(page_size));
         partitions_data[partition].current_tuple_offset = 0;
     }
 
@@ -37,7 +38,7 @@ public:
         global_histogram.fill(0);
     }
 
-    void add_histogram_chunk(const std::vector<size_t> &histogram_chunk) {
+    void add_histogram_chunk(std::vector<size_t> &histogram_chunk) {
         {
             std::unique_lock lock(global_histogram_mutex);
             for (size_t i = 0; i < partitions; ++i) {
@@ -46,13 +47,12 @@ public:
         }
         thread_barrier.arrive_and_wait();
 
-        static std::once_flag distribute_flag;
         std::call_once(distribute_flag, [&]() {
             auto distribute_time_start = std::chrono::high_resolution_clock::now();
             distribute_pages();
             auto distribute_time_end = std::chrono::high_resolution_clock::now();
 
-            std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
+            //std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
         });
         thread_barrier.arrive_and_wait();
     }
@@ -78,7 +78,7 @@ public:
 
             assert(partitions_data[partition].pages.size() == num_full_pages + (remaining_tuples > 0 ? 1 : 0));
         }
-        std::cout << "Allocated " << all_tuples << " tuples" << std::endl;
+        //std::cout << "Allocated " << all_tuples << " tuples" << std::endl;
     }
 
     std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<size_t> &local_histogram) {
@@ -89,11 +89,11 @@ public:
             size_t tuples_to_write = local_histogram[partition];
 
             while (tuples_to_write > 0) {
-                size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-                auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+                const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
+                auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
-                size_t free_space = tuples_per_page - current_tuple_offset;
-                size_t tuples_for_page = std::min(free_space, tuples_to_write);
+                const size_t free_space = tuples_per_page - current_tuple_offset;
+                const size_t tuples_for_page = std::min(free_space, tuples_to_write);
 
                 PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 

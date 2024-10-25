@@ -27,7 +27,7 @@ class Tuple16 : public BenchmarkTuple {
     std::array<uint32_t, 3> data;
 
 public:
-    Tuple16() : data{0, 0, 0} {}
+    Tuple16() : data{} {}
 
     Tuple16(KeyType key, const std::array<uint32_t, 3> &data)
         : BenchmarkTuple(key), data(data) {}
