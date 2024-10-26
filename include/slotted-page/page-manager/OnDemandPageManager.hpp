@@ -7,22 +7,29 @@
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class OnDemandPageManager {
     std::array<PaddedMutex, partitions> partition_locks;
-    std::array<ManagedSlottedPage<T>, partitions> pages = {ManagedSlottedPage<T>(page_size)};
-    std::array<size_t, partitions> send_pages{0};
+    std::array<std::vector<ManagedSlottedPage<T>>, partitions> pages;
 
-    void insert_tuple(const T &tuple, size_t partition) {
-        std::lock_guard lock(partition_locks[partition]);
-        if (!pages[partition].add_tuple(tuple)) {
-            ++send_pages[partition];
-            pages[partition] = ManagedSlottedPage<T>(page_size);
-            pages[partition].add_tuple(tuple);
+public:
+    OnDemandPageManager() {
+        for (size_t i = 0; i < partitions; ++i) {
+            pages[i].push_back(ManagedSlottedPage<T>(page_size));
         }
     }
 
-    std::array<size_t, partitions> get_send_page_info() {
-        std::array<size_t, partitions> result = send_pages;
-        for (int i = 0; i < partitions; ++i) {
-            result[i] += pages[i].get_num_slots() > 0;
+    void insert_tuple(const T &tuple, size_t partition) {
+        std::unique_lock lock(partition_locks[partition].mutex);
+        if (!pages[partition].back().add_tuple(tuple)) {
+            pages[partition].push_back(ManagedSlottedPage<T>(page_size));
+            pages[partition].back().add_tuple(tuple);
+        }
+    }
+
+    std::vector<size_t> get_written_tuples_per_partition() {
+        std::vector<size_t> result(partitions, 0);
+        for (size_t i = 0; i < partitions; ++i) {
+            for (const auto &page: pages[i]) {
+                result[i] += page.get_tuple_count();
+            }
         }
         return result;
     }

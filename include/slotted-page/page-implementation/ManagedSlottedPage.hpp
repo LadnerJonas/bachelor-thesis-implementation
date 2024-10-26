@@ -5,39 +5,56 @@
 #include <optional>
 #include <vector>
 
+#include "slotted-page/page-implementation/HeaderInfo.hpp"
 #include "slotted-page/page-implementation/SlotInfo.hpp"
 
 template<typename T>
 class ManagedSlottedPage {
     size_t page_size;
-    size_t free_space_offset;
-    size_t num_slots;
-    std::unique_ptr<char[]> page_data;
-    std::vector<SlotInfo<T>> slots;
+    std::shared_ptr<uint8_t[]> page_data;
+    HeaderInfo *header;
+    SlotInfo<T> *slots;
+    T *data_section;
+    size_t max_tuples;
+    size_t current_index = 0;
 
 public:
     explicit ManagedSlottedPage(size_t page_size)
-        : page_size(page_size), free_space_offset(page_size), num_slots(0) {
-        page_data = std::make_unique<char[]>(page_size);
+        : page_size(page_size) {
+        // Compute max possible tuples based on page_data size and tuple/slot size
+        max_tuples = (page_size - sizeof(HeaderInfo)) / (sizeof(T) + sizeof(SlotInfo<T>));
+        page_data = std::make_shared<uint8_t[]>(page_size);
+
+        // Set up header, slots, and data pointers within the page_data
+        header = reinterpret_cast<HeaderInfo *>(page_data.get());
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo));
+        data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * sizeof(T));
+
+        // Initialize header values
+        header->tuple_count = 0;
     }
 
     bool add_tuple(const T &tuple) {
-        size_t tuple_size = sizeof(T);
-        if (free_space_offset - (num_slots + 1) * sizeof(SlotInfo<T>) < tuple_size) {
-            return false;
-        }
-        free_space_offset -= tuple_size;
-        std::memcpy(page_data.get() + free_space_offset, &tuple, tuple_size);
-        slots.emplace_back(free_space_offset, tuple.get_key());
-        num_slots++;
+        //store tuple starting from the end of the page_data
+        size_t tuple_offset_from_end = page_size - (current_index + 1) * sizeof(T);
+        auto tuple_start = page_data.get() + tuple_offset_from_end;
+        std::memcpy(tuple_start, &tuple, sizeof(T));
+
+        //store slot
+        SlotInfo<T> slot(tuple_offset_from_end, sizeof(T), tuple.get_key());
+        auto slot_start = page_data.get() + sizeof(HeaderInfo) + current_index * sizeof(SlotInfo<T>);
+        std::memcpy(slot_start, &slot, sizeof(SlotInfo<T>));
+
+        // Increase tuple count
+        header->tuple_count += 1;
         return true;
     }
 
     std::optional<T> get_tuple(const typename T::KeyType &key) const {
-        for (const auto &slot: slots) {
-            if (slot.key == key) {
+        for (size_t i = 0; i < header->tuple_count; ++i) {
+            if (slots[i].key == key) {
                 T tuple;
-                std::memcpy(&tuple, page_data.get() + slot.offset, sizeof(T));
+                std::memcpy(&tuple, data_section + i, sizeof(T));
                 return tuple;
             }
         }
@@ -46,14 +63,15 @@ public:
 
     std::vector<T> get_all_tuples() const {
         std::vector<T> all_tuples;
-        for (const auto &slot: slots) {
+        for (size_t i = 0; i < header->tuple_count; ++i) {
             T tuple;
-            std::memcpy(&tuple, page_data.get() + slot.offset, sizeof(T));
+            std::memcpy(&tuple, data_section + i, sizeof(T));
             all_tuples.push_back(tuple);
         }
         return all_tuples;
     }
-    size_t get_num_slots() const {
-        return num_slots;
+
+    size_t get_tuple_count() const {
+        return header->tuple_count;
     }
 };

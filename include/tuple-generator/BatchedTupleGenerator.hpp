@@ -16,7 +16,7 @@ class BatchedTupleGenerator {
     std::mt19937_64 gen;
 
 public:
-    BatchedTupleGenerator(const size_t max_generated_tuples, const uint64_t seed) : max_generated_tuples(max_generated_tuples), gen(seed) {
+    explicit BatchedTupleGenerator(const size_t max_generated_tuples, const uint64_t seed = 42) : max_generated_tuples(max_generated_tuples), gen(seed) {
         generateBatchOfTuples();
     }
 
