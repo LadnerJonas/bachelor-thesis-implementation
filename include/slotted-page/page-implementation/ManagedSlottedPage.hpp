@@ -35,6 +35,10 @@ public:
     }
 
     bool add_tuple(const T &tuple) {
+        if (header->tuple_count == max_tuples) {
+            return false;
+        }
+
         //store tuple starting from the end of the page_data
         size_t tuple_offset_from_end = page_size - (current_index + 1) * sizeof(T);
         auto tuple_start = page_data.get() + tuple_offset_from_end;
