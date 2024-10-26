@@ -22,7 +22,7 @@ public:
         : page_size(page_size), tuple_count(0), free_space_offset(page_size) {
         size_t max_tuples = page_size / (sizeof(T) + sizeof(SlotInfo<T>));
         page_data = std::make_shared<T[]>(max_tuples);
-        slots.reserve(max_tuples);
+        slots = std::vector<SlotInfo<T>>(max_tuples);
     }
 
     std::shared_ptr<T[]> get_page_data() const {

@@ -1,15 +1,14 @@
 #pragma once
-#pragma once
 
-#include "slotted-page/page-manager/PageWriteInfo.hpp"
+#include "radix/worker/PartitionInfo.hpp"
 #include "slotted-page/page-manager/RadixPageManager.hpp"
 #include "util/partitioning_function.hpp"
 
 
-template<typename T, size_t partitions, size_t k , size_t page_size = 5 * 1024 * 1024>
+template<typename T, size_t partitions, size_t k, size_t page_size = 5 * 1024 * 1024>
 void process_radix_chunk_selectively(RadixPageManager<T, partitions, page_size> &page_manager, T *chunk, size_t chunk_size) {
     auto time_start = std::chrono::high_resolution_clock::now();
-    std::vector<size_t> histogram(partitions, 0);
+    std::vector<unsigned> histogram(partitions, 0);
 
     // First pass: build histogram
     for (size_t i = 0; i < chunk_size; ++i) {
@@ -21,10 +20,6 @@ void process_radix_chunk_selectively(RadixPageManager<T, partitions, page_size> 
     auto write_info = page_manager.get_write_info(histogram);
     auto time_to_start_writing = std::chrono::high_resolution_clock::now();
 
-    struct PartitionInfo {
-        size_t entry_index = 0;
-        size_t written_tuples = 0;
-    };
     std::array<PartitionInfo, partitions> partition_info = {};
 
     // Process k partitions at a time

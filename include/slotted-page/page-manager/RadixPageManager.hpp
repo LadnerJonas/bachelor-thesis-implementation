@@ -38,7 +38,7 @@ public:
         global_histogram.fill(0);
     }
 
-    void add_histogram_chunk(std::vector<size_t> &histogram_chunk) {
+    void add_histogram_chunk(const std::vector<unsigned> &histogram_chunk) {
         {
             std::unique_lock lock(global_histogram_mutex);
             for (size_t i = 0; i < partitions; ++i) {
@@ -48,12 +48,13 @@ public:
         thread_barrier.arrive_and_wait();
 
         std::call_once(distribute_flag, [&]() {
-            auto distribute_time_start = std::chrono::high_resolution_clock::now();
+            // auto distribute_time_start = std::chrono::high_resolution_clock::now();
             distribute_pages();
-            auto distribute_time_end = std::chrono::high_resolution_clock::now();
+            // auto distribute_time_end = std::chrono::high_resolution_clock::now();
 
             //std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
         });
+
         thread_barrier.arrive_and_wait();
     }
 
@@ -81,7 +82,7 @@ public:
         //std::cout << "Allocated " << all_tuples << " tuples" << std::endl;
     }
 
-    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<size_t> &local_histogram) {
+    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<unsigned> &local_histogram) {
         std::lock_guard lock(global_histogram_mutex);
         std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
 
