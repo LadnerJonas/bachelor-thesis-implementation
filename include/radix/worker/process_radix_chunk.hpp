@@ -20,17 +20,17 @@ void process_radix_chunk(RadixPageManager<T, partitions, page_size> &page_manage
     std::array<PartitionInfo, partitions> partition_info = {};
     for (size_t i = 0; i < chunk_size; ++i) {
         const size_t partition = partition_function<T, partitions>(chunk[i]);
-        auto &info = write_info[partition][partition_info[partition].entry_index];
+        auto info = write_info[partition][partition_info[partition].entry_index];
 
         if (info.tuples_to_write == partition_info[partition].written_tuples) {
-            info.page->update_tuple_count(partition_info[partition].written_tuples);
+            RawSlottedPage<T>::increase_tuple_count(info.page_data, partition_info[partition].written_tuples);
             ++partition_info[partition].entry_index;
             partition_info[partition].written_tuples = 0;
             info = write_info[partition][partition_info[partition].entry_index];
         }
 
-        size_t data_offset = info.start_offset + partition_info[partition].written_tuples;
-        info.page->add_tuple_at_offset(chunk[i], data_offset, info.start_offset + partition_info[partition].written_tuples);
+        size_t entry_num = info.start_num + partition_info[partition].written_tuples;
+        RawSlottedPage<T>::write_tuple(info.page_data, page_size, chunk[i], entry_num);
 
         ++partition_info[partition].written_tuples;
     }
@@ -39,7 +39,7 @@ void process_radix_chunk(RadixPageManager<T, partitions, page_size> &page_manage
         auto [entry_index, written_tuples] = partition_info[i];
         if (written_tuples > 0) {
             assert(write_info[i].size() > entry_index);
-            write_info[i][entry_index].page->update_tuple_count(written_tuples);
+            RawSlottedPage<T>::increase_tuple_count(write_info[i][entry_index].page_data, written_tuples);
         }
     }
     //std::cout << "Processed chunk in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_to_start_writing).count() << "ms" << std::endl;

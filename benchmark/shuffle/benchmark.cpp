@@ -6,8 +6,8 @@
 
 template<typename T, unsigned... Partitions>
 void benchmark_RadixOrchestrator() {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? 5 : 1;
-    unsigned tuples_base = 10'000'000;
+    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100)/sizeof(Tuple16)) : 1;
+    unsigned tuples_base = 40'000'000;
     for (unsigned tuples_to_generate = tuples_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_base * tuple_count_factor; tuples_to_generate += tuples_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -47,8 +47,8 @@ void benchmark_RadixOrchestrator() {
 
 template<typename T, unsigned... Partitions>
 void benchmark_RadixSelectiveOrchestrator() {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? 5 : 1;
-    unsigned tuples_base = 10'000'000;
+    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100)/sizeof(Tuple16)) : 1;
+    unsigned tuples_base = 40'000'000;
     for (unsigned tuples_to_generate = tuples_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_base * tuple_count_factor; tuples_to_generate += tuples_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -62,7 +62,7 @@ void benchmark_RadixSelectiveOrchestrator() {
                 params.setParam("D-GB", gb_str.str());
                 params.setParam("E-Partitions", partition);
                 params.setParam("F-Threads", threads);
-                constexpr unsigned k = 2;
+                constexpr unsigned k = 16;
                 params.setParam("G-k", k);
                 PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_base * tuple_count_factor && threads == 1 && partition == 2);
 
@@ -89,9 +89,9 @@ void benchmark_RadixSelectiveOrchestrator() {
 }
 
 int main() {
-    //benchmark_RadixSelectiveOrchestrator<Tuple16, 2, 8, 32, 256, 1024>();
+    benchmark_RadixSelectiveOrchestrator<Tuple16, 2, 8, 32, 256, 1024>();
     benchmark_RadixOrchestrator<Tuple16, 2, 8, 32, 256, 1024>();
-    //benchmark_RadixSelectiveOrchestrator<Tuple100, 2, 8, 32, 256, 1024>();
+    benchmark_RadixSelectiveOrchestrator<Tuple100, 2, 8, 32, 256, 1024>();
     benchmark_RadixOrchestrator<Tuple100, 2, 8, 32, 256, 1024>();
 
     return 0;

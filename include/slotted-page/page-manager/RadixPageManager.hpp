@@ -18,7 +18,7 @@ class RadixPageManager {
     };
 
     size_t num_threads;
-    size_t tuples_per_page = page_size / (sizeof(T) + sizeof(SlotInfo<T>));
+    size_t tuples_per_page = (page_size - sizeof(HeaderInfo)) / (sizeof(T) + sizeof(SlotInfo<T>));
     std::array<size_t, partitions> global_histogram{};
     std::array<PartitionData, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
@@ -51,35 +51,33 @@ public:
             // auto distribute_time_start = std::chrono::high_resolution_clock::now();
             distribute_pages();
             // auto distribute_time_end = std::chrono::high_resolution_clock::now();
-
-            //std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
+            // std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
         });
-
-        thread_barrier.arrive_and_wait();
     }
 
     void distribute_pages() {
-        // Calculate page allocation per partition based on the global histogram
-        size_t all_tuples = 0;
+        // Allocate pages concurrently for each partition
+        std::vector<std::future<void>> futures;
         for (size_t partition = 0; partition < partitions; ++partition) {
-            size_t total_tuples = global_histogram[partition];
-            all_tuples += total_tuples;
-            size_t num_full_pages = total_tuples / tuples_per_page;
-            size_t remaining_tuples = total_tuples % tuples_per_page;
+            futures.push_back(std::async(std::launch::async, [this, partition]() {
+                size_t total_tuples = global_histogram[partition];
+                size_t num_full_pages = total_tuples / tuples_per_page;
+                size_t remaining_tuples = total_tuples % tuples_per_page;
 
-            // Allocate full pages
-            for (size_t i = 0; i < num_full_pages; ++i) {
-                allocate_new_page(partition);
-            }
+                size_t total_pages = num_full_pages + (remaining_tuples > 0 ? 1 : 0);
+                for (size_t i = 0; i < total_pages; ++i) {
+                    allocate_new_page(partition);
+                }
 
-            // Allocate page for remaining tuples
-            if (remaining_tuples > 0) {
-                allocate_new_page(partition);
-            }
-
-            assert(partitions_data[partition].pages.size() == num_full_pages + (remaining_tuples > 0 ? 1 : 0));
+                // Verify page allocation correctness
+                assert(partitions_data[partition].pages.size() == total_pages);
+            }));
         }
-        //std::cout << "Allocated " << all_tuples << " tuples" << std::endl;
+
+        // Wait for all threads to finish
+        for (auto &fut: futures) {
+            fut.get();
+        }
     }
 
     std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<unsigned> &local_histogram) {

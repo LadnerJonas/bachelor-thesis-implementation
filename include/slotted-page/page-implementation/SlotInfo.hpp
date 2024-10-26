@@ -2,8 +2,9 @@
 
 template<typename T>
 struct SlotInfo {
-    size_t offset;
+    unsigned offset;
+    unsigned length;
     typename T::KeyType key;
     SlotInfo() = default;
-    SlotInfo(size_t offset, typename T::KeyType key) : offset(offset), key(key) {}
+    SlotInfo(unsigned offset, unsigned length, typename T::KeyType key) : offset(offset), length(length), key(key) {}
 };

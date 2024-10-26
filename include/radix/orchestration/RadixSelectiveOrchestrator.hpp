@@ -17,9 +17,9 @@ public:
     }
 
     void run() {
-        auto time_start = std::chrono::high_resolution_clock::now();
+        // auto time_start = std::chrono::high_resolution_clock::now();
         materialization.materialize();
-        auto time_end = std::chrono::high_resolution_clock::now();
+        // auto time_end = std::chrono::high_resolution_clock::now();
         //std::cout << "Materialization time: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms" << std::endl;
         auto data = materialization.get_data();
         for (size_t i = 0; i < num_threads; ++i) {

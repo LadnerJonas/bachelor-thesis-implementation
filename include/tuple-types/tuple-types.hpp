@@ -14,7 +14,7 @@ public:
 
     BenchmarkTuple(KeyType key) : key(key) {}
 
-    KeyType getKey() const {
+    KeyType get_key() const {
         return key;
     }
 
