@@ -5,7 +5,6 @@
 #include "util/padded/PaddedMutex.hpp"
 #include <array>
 #include <barrier>
-#include <latch>
 #include <mutex>
 #include <vector>
 
@@ -19,7 +18,7 @@ class RadixPageManager {
 
     size_t num_threads;
     size_t tuples_per_page = (page_size - sizeof(HeaderInfo)) / (sizeof(T) + sizeof(SlotInfo<T>));
-    std::array<size_t, partitions> global_histogram{};
+    std::array<size_t, partitions> global_histogram;
     std::array<PartitionData, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
     std::barrier<> thread_barrier;
@@ -81,7 +80,7 @@ public:
     }
 
     std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<unsigned> &local_histogram) {
-        std::lock_guard lock(global_histogram_mutex);
+        std::unique_lock lock(global_histogram_mutex);
         std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
 
         for (size_t partition = 0; partition < partitions; ++partition) {
@@ -111,10 +110,10 @@ public:
     }
 
     std::vector<size_t> get_written_tuples_per_partition() {
-        std::vector<size_t> written_tuples(partitions);
+        std::vector<size_t> written_tuples(partitions, 0);
         for (size_t partition = 0; partition < partitions; ++partition) {
-            for (size_t i = 0; i < partitions_data[partition].pages.size(); ++i) {
-                written_tuples[partition] += partitions_data[partition].pages[i]->get_tuple_count();
+            for (const auto &page: partitions_data[partition].pages) {
+                written_tuples[partition] += page->get_tuple_count();
             }
         }
         return written_tuples;
