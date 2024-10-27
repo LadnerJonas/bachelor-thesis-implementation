@@ -1,4 +1,5 @@
 #include "../external/perfevent/PerfEvent.hpp"
+#include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandOrchestrator.hpp"
 #include "radix/orchestration/RadixOrchestrator.hpp"
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
@@ -38,8 +39,8 @@ void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
-                setup_benchmark_params<T>(params, "RadixOrchestrator" ,tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 2);
+                setup_benchmark_params<T>(params, "RadixOrchestrator", tuples_to_generate, partition, threads);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 32);
 
                 RadixOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -59,10 +60,10 @@ void benchmark_RadixSelectiveOrchestrator(unsigned tuples_to_generate_base) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
-                setup_benchmark_params<T>(params, "RadixSelectiveOrchestrator" , tuples_to_generate, partition, threads);
+                setup_benchmark_params<T>(params, "RadixSelectiveOrchestrator", tuples_to_generate, partition, threads);
                 constexpr unsigned k = 16;
                 params.setParam("G-k", k);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 2);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 32);
 
                 RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -86,7 +87,7 @@ void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "OnDemandOrchestrator", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 2);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 32);
 
                 OnDemandOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -102,15 +103,41 @@ void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
     }
 }
 
+template<typename T, unsigned... Partitions>
+void benchmark_HybridOrchestrator(unsigned tuples_to_generate_base) {
+    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100) / sizeof(Tuple16)) : 1;
+    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+        auto run_benchmark = [&](auto partition) {
+            for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
+                BenchmarkParameters params;
+                setup_benchmark_params<T>(params, "HybridOrchestrator", tuples_to_generate, partition, threads);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 32);
+
+                HybridOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                orchestrator.run();
+
+                // Verify the result
+                auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+            }
+        };
+
+        // Use fold expression to call run_benchmark with each partition value
+        (run_benchmark(std::integral_constant<unsigned, Partitions>{}), ...);
+    }
+}
+
 int main() {
     unsigned tuples_to_generate_base = 40'000'000u;
-    benchmark_OnDemandOrchestrator<Tuple16, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
-    benchmark_RadixOrchestrator<Tuple16, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
-    benchmark_RadixSelectiveOrchestrator<Tuple16, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
+    benchmark_HybridOrchestrator<Tuple16, 32, 1024>(tuples_to_generate_base);
+    benchmark_HybridOrchestrator<Tuple100, 32, 1024>(tuples_to_generate_base);
+    benchmark_OnDemandOrchestrator<Tuple16, 32, 1024>(tuples_to_generate_base);
+    benchmark_RadixOrchestrator<Tuple16, 32, 1024>(tuples_to_generate_base);
+    // benchmark_RadixSelectiveOrchestrator<Tuple16, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
 
-    benchmark_OnDemandOrchestrator<Tuple100, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
-    benchmark_RadixOrchestrator<Tuple100, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
-    benchmark_RadixSelectiveOrchestrator<Tuple100, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
+    benchmark_OnDemandOrchestrator<Tuple100, 32, 1024>(tuples_to_generate_base);
+    benchmark_RadixOrchestrator<Tuple100, 32, 1024>(tuples_to_generate_base);
+    // benchmark_RadixSelectiveOrchestrator<Tuple100, 2, 8, 32, 256, 1024>(tuples_to_generate_base);
 
     return 0;
 }

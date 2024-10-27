@@ -10,10 +10,9 @@
 #include <vector>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-class RadixPageManager {
-    size_t num_threads;
+class HybridPageManager {
     size_t tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
-    std::array<size_t, partitions> global_histogram;
+    size_t num_threads;
     std::array<PartitionData<T>, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
     std::barrier<> thread_barrier;
@@ -26,51 +25,11 @@ class RadixPageManager {
     }
 
 public:
-    explicit RadixPageManager(size_t num_threads)
+    explicit HybridPageManager(size_t num_threads)
         : num_threads(num_threads),
           thread_barrier(static_cast<long>(num_threads)) {
-        global_histogram.fill(0);
-    }
-
-    void add_histogram_chunk(const std::vector<unsigned> &histogram_chunk) {
-        {
-            std::unique_lock lock(global_histogram_mutex);
-            for (size_t i = 0; i < partitions; ++i) {
-                global_histogram[i] += histogram_chunk[i];
-            }
-        }
-        thread_barrier.arrive_and_wait();
-
-        std::call_once(distribute_flag, [&]() {
-            // auto distribute_time_start = std::chrono::high_resolution_clock::now();
-            distribute_pages();
-            // auto distribute_time_end = std::chrono::high_resolution_clock::now();
-            // std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
-        });
-    }
-
-    void distribute_pages() {
-        // Allocate pages concurrently for each partition
-        std::vector<std::future<void>> futures;
-        for (size_t partition = 0; partition < partitions; ++partition) {
-            futures.push_back(std::async(std::launch::async, [this, partition]() {
-                size_t total_tuples = global_histogram[partition];
-                size_t num_full_pages = total_tuples / tuples_per_page;
-                size_t remaining_tuples = total_tuples % tuples_per_page;
-
-                size_t total_pages = num_full_pages + (remaining_tuples > 0 ? 1 : 0);
-                for (size_t i = 0; i < total_pages; ++i) {
-                    allocate_new_page(partition);
-                }
-
-                // Verify page allocation correctness
-                assert(partitions_data[partition].pages.size() == total_pages);
-            }));
-        }
-
-        // Wait for all threads to finish
-        for (auto &fut: futures) {
-            fut.get();
+        for (size_t i = 0; i < partitions; i++) {
+            allocate_new_page(i);
         }
     }
 
@@ -83,21 +42,23 @@ public:
 
             while (tuples_to_write > 0) {
                 const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-                auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
                 const size_t free_space = tuples_per_page - current_tuple_offset;
                 const size_t tuples_for_page = std::min(free_space, tuples_to_write);
 
+                if (free_space == 0) {
+                    allocate_new_page(partition);
+                    ++partitions_data[partition].current_page;
+                    partitions_data[partition].current_tuple_offset = 0;
+                    continue;
+                }
+
+                auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 
                 thread_write_info[partition].emplace_back(write_info);
                 tuples_to_write -= tuples_for_page;
                 partitions_data[partition].current_tuple_offset += tuples_for_page;
-
-                if (tuples_to_write > 0) {
-                    ++partitions_data[partition].current_page;
-                    partitions_data[partition].current_tuple_offset = 0;
-                }
             }
         }
 

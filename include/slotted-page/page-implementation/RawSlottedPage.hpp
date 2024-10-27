@@ -55,6 +55,10 @@ public:
         header->tuple_count += tuple_count;
     }
 
+    static size_t get_max_tuples(size_t page_size) {
+        return (page_size - sizeof(HeaderInfo)) / (sizeof(T) + sizeof(SlotInfo<T>));
+    }
+
     std::optional<T> get_tuple(const typename T::KeyType &key) const {
         for (size_t i = 0; i < header->tuple_count; ++i) {
             if (slots[i].key == key) {

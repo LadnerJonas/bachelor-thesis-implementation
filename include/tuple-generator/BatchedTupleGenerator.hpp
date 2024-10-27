@@ -69,6 +69,25 @@ public:
 
         return std::make_pair(std::move(batch_ptr), length_of_batch);
     }
+
+    auto getBatchOfTuples(size_t max_tuples_generate) -> std::pair<std::unique_ptr<T[]>, size_t> {
+        if (generated_tuples >= max_generated_tuples) {
+            return {std::unique_ptr<T[]>(nullptr), 0};
+        }
+
+        if (current_batch_index != 0) {
+            generateBatchOfTuples();
+        }
+
+        const auto length_of_batch = std::min(std::min(batch_size, max_generated_tuples - generated_tuples), max_tuples_generate);
+        current_batch_index = length_of_batch;
+
+        std::unique_ptr<T[]> batch_ptr = std::make_unique<T[]>(length_of_batch);
+        std::copy(batch, batch + length_of_batch, batch_ptr.get());
+        generated_tuples += length_of_batch;
+
+        return std::make_pair(std::move(batch_ptr), length_of_batch);
+    }
     auto getBatchSize() const {
         return batch_size;
     }
