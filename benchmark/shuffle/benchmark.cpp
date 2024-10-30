@@ -40,7 +40,7 @@ void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "RadixOrchestrator", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1 && partition == 32);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
 
                 RadixOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
