@@ -3,6 +3,7 @@
 #include "slotted-page/page-implementation/RawSlottedPage.hpp"
 #include "slotted-page/page-manager/PageWriteInfo.hpp"
 #include "slotted-page/page-manager/PartitionData.hpp"
+#include "slotted-page/page-pool/SlottedPagePool.hpp"
 #include "util/padded/PaddedMutex.hpp"
 #include <array>
 #include <barrier>
@@ -19,9 +20,11 @@ class RadixPageManager {
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
     std::once_flag distribute_flag;
+    SlottedPagePool<T, partitions, page_size> page_pool;
 
     void allocate_new_page(size_t partition) {
-        partitions_data[partition].pages.emplace_back(std::make_shared<RawSlottedPage<T>>(page_size));
+        assert(page_pool.has_free_page());
+        partitions_data[partition].pages.emplace_back(RawSlottedPage<T>(page_size, page_pool.get_single_page()));
         partitions_data[partition].current_tuple_offset = 0;
     }
 
@@ -29,6 +32,11 @@ public:
     explicit RadixPageManager(size_t num_threads)
         : num_threads(num_threads),
           thread_barrier(static_cast<long>(num_threads)) {
+        global_histogram.fill(0);
+    }
+    explicit RadixPageManager(size_t num_threads, size_t num_tuples)
+        : num_threads(num_threads),
+          thread_barrier(static_cast<long>(num_threads)), page_pool(num_tuples) {
         global_histogram.fill(0);
     }
 
@@ -42,35 +50,18 @@ public:
         thread_barrier.arrive_and_wait();
 
         std::call_once(distribute_flag, [&]() {
-            // auto distribute_time_start = std::chrono::high_resolution_clock::now();
             distribute_pages();
-            // auto distribute_time_end = std::chrono::high_resolution_clock::now();
-            // std::cout << "Distributed pages in " << std::chrono::duration_cast<std::chrono::milliseconds>(distribute_time_end - distribute_time_start).count() << "ms" << std::endl;
         });
     }
 
     void distribute_pages() {
-        // Allocate pages concurrently for each partition
-        std::vector<std::future<void>> futures;
         for (size_t partition = 0; partition < partitions; ++partition) {
-            futures.push_back(std::async(std::launch::async, [this, partition]() {
-                size_t total_tuples = global_histogram[partition];
-                size_t num_full_pages = total_tuples / tuples_per_page;
-                size_t remaining_tuples = total_tuples % tuples_per_page;
-
-                size_t total_pages = num_full_pages + (remaining_tuples > 0 ? 1 : 0);
-                for (size_t i = 0; i < total_pages; ++i) {
-                    allocate_new_page(partition);
-                }
-
-                // Verify page allocation correctness
-                assert(partitions_data[partition].pages.size() == total_pages);
-            }));
-        }
-
-        // Wait for all threads to finish
-        for (auto &fut: futures) {
-            fut.get();
+            const size_t total_tuples = global_histogram[partition];
+            const size_t total_pages = (total_tuples + tuples_per_page - 1) / tuples_per_page;
+            for (size_t i = 0; i < total_pages; ++i) {
+                allocate_new_page(partition);
+            }
+            assert(partitions_data[partition].pages.size() == total_pages);
         }
     }
 
@@ -108,7 +99,7 @@ public:
         std::vector<size_t> written_tuples(partitions, 0);
         for (size_t partition = 0; partition < partitions; ++partition) {
             for (const auto &page: partitions_data[partition].pages) {
-                written_tuples[partition] += page->get_tuple_count();
+                written_tuples[partition] += page.get_tuple_count();
             }
         }
         return written_tuples;

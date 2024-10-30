@@ -42,7 +42,7 @@ void handle_sub_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
                                ChunkCreator<T> &chunk_creator, size_t proposed_chunk_size) {
-    auto sub_chunks = 4;
+    auto sub_chunks = 4u;
     auto sub_chunk_size = (proposed_chunk_size + sub_chunks - 1) / sub_chunks;
     for (size_t i = 0; i < sub_chunks; ++i) {
         auto current_chunk_size = std::min(sub_chunk_size, proposed_chunk_size - i * sub_chunk_size);

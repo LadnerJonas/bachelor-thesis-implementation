@@ -4,7 +4,7 @@
 
 template<typename T>
 struct PartitionData {
-    std::vector<std::shared_ptr<RawSlottedPage<T>>> pages;
+    std::vector<RawSlottedPage<T>> pages;
     size_t current_page = 0;
     size_t current_tuple_offset = 0;
 };

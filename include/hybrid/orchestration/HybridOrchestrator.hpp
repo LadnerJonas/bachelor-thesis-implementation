@@ -15,7 +15,7 @@ class HybridOrchestrator {
 
 public:
     explicit HybridOrchestrator(size_t num_tuples, size_t num_threads)
-        : chunk_creator(num_tuples), page_manager(num_threads), num_threads(num_threads), num_tuples(num_tuples) {
+        : chunk_creator(num_tuples), page_manager(num_threads, num_tuples), num_threads(num_threads), num_tuples(num_tuples) {
     }
 
     void run() {
