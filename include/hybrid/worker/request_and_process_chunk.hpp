@@ -5,20 +5,14 @@
 
 
 struct PartitionInfo;
-template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
-                               ChunkCreator<T> &chunk_creator, size_t proposed_chunk_size) {
-    // auto time_start = std::chrono::high_resolution_clock::now();
-    auto [chunk, chunk_size] = chunk_creator.getChunkOfTuples(proposed_chunk_size);
-    assert(proposed_chunk_size == chunk_size);
-
+template<typename T, size_t partitions, size_t page_size>
+void handle_sub_chunk(HybridPageManager<T, partitions, page_size> &page_manager, std::unique_ptr<T[]> &chunk, const size_t chunk_size) {
     std::vector<unsigned> histogram(partitions, 0);
     for (size_t i = 0; i < chunk_size; ++i) {
         const size_t partition = partition_function<T, partitions>(chunk[i]);
         ++histogram[partition];
     }
     auto write_info = page_manager.get_write_info(histogram);
-    // auto time_to_start_writing = std::chrono::high_resolution_clock::now();
     std::array<PartitionInfo, partitions> partition_info = {};
     for (size_t i = 0; i < chunk_size; ++i) {
         const size_t partition = partition_function<T, partitions>(chunk[i]);
@@ -44,5 +38,16 @@ void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page
             RawSlottedPage<T>::increase_tuple_count(write_info[i][entry_index].page_data, written_tuples);
         }
     }
-    //std::cout << "Processed chunk in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_to_start_writing).count() << "ms" << std::endl;
+}
+template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
+void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
+                               ChunkCreator<T> &chunk_creator, size_t proposed_chunk_size) {
+    auto sub_chunks = 4;
+    auto sub_chunk_size = (proposed_chunk_size + sub_chunks - 1) / sub_chunks;
+    for (size_t i = 0; i < sub_chunks; ++i) {
+        auto current_chunk_size = std::min(sub_chunk_size, proposed_chunk_size - i * sub_chunk_size);
+        auto [chunk, chunk_size] = chunk_creator.getChunkOfTuples(current_chunk_size);
+        assert(proposed_chunk_size == chunk_size);
+        handle_sub_chunk<T, partitions, page_size>(page_manager, chunk, chunk_size);//time_start
+    }
 }
