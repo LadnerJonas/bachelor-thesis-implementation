@@ -31,10 +31,23 @@ void setup_benchmark_params(BenchmarkParameters &params, const std::string &impl
     params.setParam("F-Threads", threads);
 }
 
+template<typename T>
+size_t get_tuple_num_scaling_value() {
+    if (std::is_same_v<T, Tuple100>) {
+        return 1;
+    }
+    if (std::is_same_v<T, Tuple16>) {
+        return sizeof(Tuple100) / sizeof(Tuple16);
+    }
+    if (std::is_same_v<T, Tuple4>) {
+        return sizeof(Tuple100) / sizeof(Tuple4);
+    }
+    return 1;
+}
 
 template<typename T, unsigned... Partitions>
 void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100) / sizeof(Tuple16)) : 1;
+    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
     for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -55,7 +68,7 @@ void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
 
 template<typename T, unsigned... Partitions>
 void benchmark_RadixSelectiveOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100) / sizeof(Tuple16)) : 1;
+    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
     for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -81,7 +94,7 @@ void benchmark_RadixSelectiveOrchestrator(unsigned tuples_to_generate_base) {
 
 template<typename T, unsigned... Partitions>
 void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100) / sizeof(Tuple16)) : 1;
+    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
     for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -105,7 +118,7 @@ void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
 
 template<typename T, unsigned... Partitions>
 void benchmark_HybridOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = std::is_same_v<T, Tuple16> ? (sizeof(Tuple100) / sizeof(Tuple16)) : 1;
+    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
     for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
@@ -129,6 +142,8 @@ void benchmark_HybridOrchestrator(unsigned tuples_to_generate_base) {
 
 int main() {
     unsigned tuples_to_generate_base = 40'000'000u;
+
+    // Tuple16
     benchmark_OnDemandOrchestrator<Tuple16, 32>(tuples_to_generate_base);
     benchmark_RadixOrchestrator<Tuple16, 32>(tuples_to_generate_base);
     benchmark_HybridOrchestrator<Tuple16, 32>(tuples_to_generate_base);
@@ -139,7 +154,7 @@ int main() {
     benchmark_HybridOrchestrator<Tuple16, 1024>(tuples_to_generate_base);
     benchmark_RadixSelectiveOrchestrator<Tuple16, 1024>(tuples_to_generate_base);
 
-
+    // Tuple100
     benchmark_OnDemandOrchestrator<Tuple100, 32>(tuples_to_generate_base);
     benchmark_RadixOrchestrator<Tuple100, 32>(tuples_to_generate_base);
     benchmark_HybridOrchestrator<Tuple100, 32>(tuples_to_generate_base);
@@ -149,6 +164,17 @@ int main() {
     benchmark_RadixOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
     benchmark_HybridOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
     benchmark_RadixSelectiveOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
+
+    // Tuple4
+    benchmark_OnDemandOrchestrator<Tuple4, 32>(tuples_to_generate_base);
+    benchmark_RadixOrchestrator<Tuple4, 32>(tuples_to_generate_base);
+    benchmark_HybridOrchestrator<Tuple4, 32>(tuples_to_generate_base);
+    benchmark_RadixSelectiveOrchestrator<Tuple4, 32>(tuples_to_generate_base);
+
+    benchmark_OnDemandOrchestrator<Tuple4, 1024>(tuples_to_generate_base);
+    benchmark_RadixOrchestrator<Tuple4, 1024>(tuples_to_generate_base);
+    benchmark_HybridOrchestrator<Tuple4, 1024>(tuples_to_generate_base);
+    benchmark_RadixSelectiveOrchestrator<Tuple4, 1024>(tuples_to_generate_base);
 
     // benchmark_OnDemandOrchestrator<Tuple100, 32, 1024>(tuples_to_generate_base);
     // benchmark_RadixOrchestrator<Tuple100, 32, 1024>(tuples_to_generate_base);

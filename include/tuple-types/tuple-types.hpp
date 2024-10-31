@@ -19,6 +19,19 @@ public:
     }
 };
 
+class Tuple4 : public BenchmarkTuple {
+public:
+    Tuple4() = default;
+    Tuple4(const Tuple4 &other) = default;
+    Tuple4 &operator=(const Tuple4 &other) = default;
+    static auto get_variable_data() -> int {
+        throw std::runtime_error("Tuple4 does not have variable data");
+    }
+    static auto get_size_of_variable_data() {
+        return 0;
+    }
+};
+
 class Tuple16 : public BenchmarkTuple {
     std::array<uint32_t, 3> data;
 
