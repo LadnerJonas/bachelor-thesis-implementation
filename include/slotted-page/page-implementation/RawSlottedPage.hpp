@@ -42,9 +42,8 @@ public:
         std::memcpy(tuple_start, &tuple, sizeof(T));
 
         //store slot
-        SlotInfo<T> slot(tuple_offset_from_end, sizeof(T), tuple.get_key());
-        const auto slot_start = page_data + sizeof(HeaderInfo) + entry_num * sizeof(SlotInfo<T>);
-        std::memcpy(slot_start, &slot, sizeof(SlotInfo<T>));
+        auto slot_start = reinterpret_cast<SlotInfo<T>*>(page_data + sizeof(HeaderInfo) + entry_num * sizeof(SlotInfo<T>));
+        new (slot_start) SlotInfo<T>(tuple_offset_from_end, sizeof(T), tuple.get_key());
     }
 
     static void increase_tuple_count(const uint8_t *page_data, size_t tuple_count) {
