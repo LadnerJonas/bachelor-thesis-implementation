@@ -88,7 +88,7 @@ public:
 
         return std::make_pair(std::move(batch_ptr), length_of_batch);
     }
-    auto getBatchSize() const {
+    auto static getBatchSize() {
         return batch_size;
     }
 };
