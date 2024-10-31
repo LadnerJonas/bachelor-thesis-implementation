@@ -22,7 +22,7 @@ public:
     explicit ManagedSlottedPage(size_t page_size)
         : page_size(page_size) {
         // Compute max possible tuples based on page_data size and tuple/slot size
-        max_tuples = (page_size - sizeof(HeaderInfo)) / (sizeof(T) + sizeof(SlotInfo<T>));
+        max_tuples = get_max_tuples(page_size);
         page_data = std::make_shared<uint8_t[]>(page_size);
 
         // Set up header, slots, and data pointers within the page_data
@@ -38,26 +38,30 @@ public:
         if (header->tuple_count == max_tuples) {
             return false;
         }
-
-        //store tuple starting from the end of the page_data
-        size_t tuple_offset_from_end = page_size - (current_index + 1) * sizeof(T);
-        auto tuple_start = page_data.get() + tuple_offset_from_end;
-        std::memcpy(tuple_start, &tuple, sizeof(T));
-
+        size_t tuple_offset_from_end = 0;
+        if (T::get_size_of_variable_data() > 0) {
+            //store tuple starting from the end of the page_data
+            tuple_offset_from_end = page_size - (current_index + 1) * T::get_size_of_variable_data();
+            auto tuple_start = page_data.get() + tuple_offset_from_end;
+            std::memcpy(tuple_start, &tuple, T::get_size_of_variable_data());
+        }
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T>*>(page_data.get() + sizeof(HeaderInfo) + current_index * sizeof(SlotInfo<T>));
-        new (slot_start) SlotInfo<T>(tuple_offset_from_end, sizeof(T), tuple.get_key());
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo) + current_index * sizeof(SlotInfo<T>));
+        new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
 
         // Increase tuple count
         header->tuple_count += 1;
         return true;
     }
 
+    static size_t get_max_tuples(size_t page_size) {
+        return (page_size - sizeof(HeaderInfo)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
+    }
+
     std::optional<T> get_tuple(const typename T::KeyType &key) const {
         for (size_t i = 0; i < header->tuple_count; ++i) {
             if (slots[i].key == key) {
-                T tuple;
-                std::memcpy(&tuple, data_section + i, sizeof(T));
+                T tuple(key, data_section[i].get_variable_data());
                 return tuple;
             }
         }
@@ -67,9 +71,13 @@ public:
     std::vector<T> get_all_tuples() const {
         std::vector<T> all_tuples;
         for (size_t i = 0; i < header->tuple_count; ++i) {
-            T tuple;
-            std::memcpy(&tuple, data_section + i, sizeof(T));
-            all_tuples.emplace_back(tuple);
+            if (T::get_size_of_variable_data() > 0) {
+                T tuple(slots[i].key, data_section[i].get_variable_data());
+                all_tuples.emplace_back(tuple);
+            } else {
+                T tuple(slots[i].key);
+                all_tuples.emplace_back(tuple);
+            }
         }
         return all_tuples;
     }

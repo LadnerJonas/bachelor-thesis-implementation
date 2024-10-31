@@ -17,10 +17,6 @@ public:
     KeyType get_key() const {
         return key;
     }
-
-    void setKey(KeyType new_key) {
-        key = new_key;
-    }
 };
 
 class Tuple16 : public BenchmarkTuple {
@@ -34,6 +30,13 @@ public:
 
     Tuple16(const Tuple16 &other) = default;
     Tuple16 &operator=(const Tuple16 &other) = default;
+
+    auto get_variable_data() -> std::array<uint32_t, 3> & {
+        return data;
+    }
+    static auto get_size_of_variable_data() {
+        return sizeof(std::array<uint32_t, 3>);
+    }
 };
 
 class Tuple100 : public BenchmarkTuple {
@@ -47,4 +50,11 @@ public:
 
     Tuple100(const Tuple100 &other) = default;
     Tuple100 &operator=(const Tuple100 &other) = default;
+
+    auto get_variable_data() -> std::array<uint32_t, 24> & {
+        return data;
+    }
+    static auto get_size_of_variable_data() {
+        return sizeof(std::array<uint32_t, 3>);
+    }
 };
