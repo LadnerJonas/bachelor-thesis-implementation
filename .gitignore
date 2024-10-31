@@ -48,3 +48,6 @@ cppcheck/
 
 # generated input files
 prototype/input_data/data/*.bin
+
+# plots
+plot/output/

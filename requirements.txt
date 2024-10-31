@@ -1,1 +1,4 @@
 numpy
+adjustText
+pandas
+matplotlib
