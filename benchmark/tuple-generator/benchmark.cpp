@@ -133,6 +133,7 @@ int main() {
         params.setParam("C-tuple_size", sizeof(Tuple100));
         params.setParam("D-batch_size", batch_sizes[0]);
         tuples_to_generate = tuples_to_generate / (sizeof(Tuple100) / sizeof(Tuple16));
+        params.setParam("B-Tuples", tuples_to_generate);
         // Batch size 0
         {
             params.setParam("A-Benchmark tuple-generator", "single tuple");
