@@ -111,7 +111,7 @@ public:
         // Create and launch threads for each partition
         std::vector<std::future<void>> futures;
         for (size_t partition = 0; partition < partitions; ++partition) {
-            futures.push_back(std::async(std::launch::async, process_partition, partition));
+            futures.emplace_back(std::async(std::launch::async, process_partition, partition));
         }
 
         // Wait for all threads to finish

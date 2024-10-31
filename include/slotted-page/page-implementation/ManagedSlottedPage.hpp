@@ -70,7 +70,7 @@ public:
         for (size_t i = 0; i < header->tuple_count; ++i) {
             T tuple;
             std::memcpy(&tuple, data_section + i, sizeof(T));
-            all_tuples.push_back(tuple);
+            all_tuples.emplace_back(tuple);
         }
         return all_tuples;
     }
