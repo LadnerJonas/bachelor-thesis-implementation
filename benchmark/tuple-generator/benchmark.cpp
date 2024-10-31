@@ -37,10 +37,11 @@ void benchmark_non_batched(size_t tuples_to_generate) {
     }
 }
 
-constexpr size_t batch_sizes[] = {8, 16, 32, 128, 512, 1024};
+constexpr size_t batch_sizes[] = {8, 32, 512, 2048};
 int main() {
     BenchmarkParameters params;
-    for (size_t tuples_to_generate = 10'000'000; tuples_to_generate <= 1'000'000'000; tuples_to_generate *= 10) {
+    for (size_t tuples_to_generate = 40'000'000u; tuples_to_generate <= 40'000'000u; tuples_to_generate *= 10) {
+        tuples_to_generate = tuples_to_generate * (sizeof(Tuple100) / sizeof(Tuple16));
         params.setParam("B-Tuples", tuples_to_generate);
         // Tuple16 benchmarks for all batch sizes
         params.setParam("C-tuple_size", sizeof(Tuple16));
@@ -101,41 +102,41 @@ int main() {
         }
 
         // Batch size 4
-        params.setParam("D-batch_size", batch_sizes[4]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
-        }
-
-        // Batch size 5
-        params.setParam("D-batch_size", batch_sizes[5]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
-        }
+        // params.setParam("D-batch_size", batch_sizes[4]);
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_non_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
+        // }
+        //
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
+        // }
+        //
+        // // Batch size 5
+        // params.setParam("D-batch_size", batch_sizes[5]);
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_non_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
+        // }
+        //
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
+        // }
 
         // Tuple100 benchmarks for all batch sizes
         params.setParam("C-tuple_size", sizeof(Tuple100));
         params.setParam("D-batch_size", batch_sizes[0]);
-
+        tuples_to_generate = tuples_to_generate / (sizeof(Tuple100) / sizeof(Tuple16));
         // Batch size 0
         {
             params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
+            PerfEventBlock e(1'000'000, params, true);
             benchmark_non_batched<Tuple100, batch_sizes[0]>(tuples_to_generate);
         }
 
@@ -188,31 +189,31 @@ int main() {
         }
 
         // Batch size 4
-        params.setParam("D-batch_size", batch_sizes[4]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
-        }
-
-        // Batch size 5
-        params.setParam("D-batch_size", batch_sizes[5]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
-        }
+        // params.setParam("D-batch_size", batch_sizes[4]);
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_non_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
+        // }
+        //
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
+        // }
+        //
+        // // Batch size 5
+        // params.setParam("D-batch_size", batch_sizes[5]);
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_non_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
+        // }
+        //
+        // {
+        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
+        //     PerfEventBlock e(1'000'000, params, false);
+        //     benchmark_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
+        // }
     }
 }
