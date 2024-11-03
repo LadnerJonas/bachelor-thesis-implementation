@@ -30,6 +30,10 @@ def load_data(file_path):
             if line and not line.lstrip().startswith("A-Benchmark"):
                 row = line.split(",")
                 row = [element.strip() for element in row]
+                if len(row) > 1:
+                    row[1] = row[1].zfill(4)
+                if len(row) > 4:
+                    row[4] = row[4].zfill(4)
                 if len(row) > len(columns)-1:
                     row = row[:6] + row[7:]
                 row.append("Tuple"+ row[1] + "-" + row[4])
@@ -40,8 +44,8 @@ def load_data(file_path):
     df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
     return df
 
-def plot_individual_data(df, output_dir, output_prefix, grouping_column="tuple_size-Partitions"):
-    os.makedirs(output_dir, exist_ok=True)
+def plot_individual_data(df, output_dir, source, output_prefix, grouping_column="tuple_size-Partitions"):
+    os.makedirs(output_dir + "/" + source, exist_ok=True)
 
     for benchmark in df["Benchmark"].unique():
         df_benchmark = df[df["Benchmark"] == benchmark]
@@ -67,13 +71,13 @@ def plot_individual_data(df, output_dir, output_prefix, grouping_column="tuple_s
             ax.set_ylabel("Metrics")
             ax.legend()
 
-            output_file = f"{output_dir}/{output_prefix}_{benchmark}_{grouping_column}_{group_value}.png"
+            output_file = f"{output_dir}/{source}/{output_prefix}_{benchmark}_{grouping_column}_{group_value}.png"
             plt.savefig(output_file)
             plt.close(fig)
             print(f"Saved plot to {output_file}")
 
-def plot_combined_data(df, output_dir, output_prefix, grouping_column="tuple_size-Partitions"):
-    os.makedirs(output_dir, exist_ok=True)
+def plot_combined_data(df, output_dir, source, output_prefix, grouping_column="tuple_size-Partitions"):
+    os.makedirs(output_dir + "/" + source, exist_ok=True)
     markers = ['o', 's', 'D', '^', 'v', 'p', '*', 'h', 'x', '+']
     colors = plt.cm.tab10.colors
     for group_value in df[grouping_column].unique():
@@ -106,7 +110,7 @@ def plot_combined_data(df, output_dir, output_prefix, grouping_column="tuple_siz
         ax.set_ylabel("Metrics")
         ax.legend()
 
-        output_file = f"{output_dir}/{output_prefix}_Combined_{grouping_column}_{group_value}.png"
+        output_file = f"{output_dir}/{source}/{output_prefix}_Combined_{grouping_column}_{group_value}.png"
         plt.savefig(output_file)
         plt.close(fig)
         print(f"Saved plot to {output_file}")
@@ -115,5 +119,5 @@ def plot_combined_data(df, output_dir, output_prefix, grouping_column="tuple_siz
 # python plot/benchmark_plots.py --source=laptop --input-file=../benchmark-results/laptop-2024-10-30-shuffle.txt --output-dir=plot/output --output-prefix=2024-10-30
 if __name__ == "__main__":
     df = load_data(args.input_file)
-    plot_individual_data(df, args.output_dir, args.output_prefix, args.grouping_column)
-    plot_combined_data(df, args.output_dir, args.output_prefix, args.grouping_column)
+    plot_individual_data(df, args.output_dir, args.source, args.output_prefix, args.grouping_column)
+    plot_combined_data(df, args.output_dir, args.source, args.output_prefix, args.grouping_column)
