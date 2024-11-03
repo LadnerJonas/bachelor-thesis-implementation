@@ -51,3 +51,6 @@ prototype/input_data/data/*.bin
 
 # plots
 plot/output/
+
+# profile data
+/profile_data/*.gcda
