@@ -6,10 +6,10 @@
 #include "on-demand/worker/process_morsel.hpp"
 #include "slotted-page/page-manager/OnDemandPageManager.hpp"
 
-template<typename T, size_t partitions>
+template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class OnDemandOrchestrator {
     MorselCreator<T> morsel_creator;
-    OnDemandPageManager<T, partitions> page_manager;
+    OnDemandPageManager<T, partitions, page_size> page_manager;
     std::vector<std::thread> threads;
     size_t num_threads;
     size_t num_tuples;
@@ -21,7 +21,7 @@ public:
     void run() {
         for (unsigned i = 0; i < num_threads; i++) {
             threads.emplace_back([this]() {
-                process_morsel<T, partitions>(morsel_creator, page_manager);
+                process_morsel<T, partitions, page_size>(morsel_creator, page_manager);
             });
         }
 

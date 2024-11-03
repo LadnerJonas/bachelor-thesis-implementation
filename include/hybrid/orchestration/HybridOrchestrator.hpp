@@ -5,10 +5,10 @@
 #include "slotted-page/page-manager/HybridPageManager.hpp"
 #include <thread>
 
-template<typename T, size_t partitions>
+template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class HybridOrchestrator {
     ChunkCreator<T> chunk_creator;
-    HybridPageManager<T, partitions> page_manager;
+    HybridPageManager<T, partitions, page_size> page_manager;
     std::vector<std::thread> threads;
     size_t num_threads;
     size_t num_tuples;

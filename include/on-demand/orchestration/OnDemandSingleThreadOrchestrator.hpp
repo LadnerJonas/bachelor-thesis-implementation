@@ -2,10 +2,10 @@
 
 #include "slotted-page/page-manager/OnDemandSingleThreadPageManager.hpp"
 
-template<typename T, size_t partitions>
+template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class OnDemandSingleThreadOrchestrator {
     BatchedTupleGenerator<T> generator;
-    OnDemandSingleThreadPageManager<T, partitions> page_manager;
+    OnDemandSingleThreadPageManager<T, partitions, page_size> page_manager;
     size_t num_tuples;
 
 public:

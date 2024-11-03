@@ -4,10 +4,10 @@
 #include "radix/worker/process_radix_chunk_selectively.hpp"
 #include "slotted-page/page-manager/RadixPageManager.hpp"
 
-template<typename T, size_t partitions, size_t k>
+template<typename T, size_t partitions, size_t k, size_t page_size = 5 * 1024 * 1024>
 class RadixSelectiveOrchestrator {
     ContinuousMaterialization<T> materialization;
-    RadixPageManager<T, partitions> page_manager;
+    RadixPageManager<T, partitions, page_size> page_manager;
     std::vector<std::thread> threads;
     size_t num_threads;
     size_t num_tuples;
