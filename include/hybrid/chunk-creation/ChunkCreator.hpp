@@ -23,9 +23,7 @@ public:
         std::unique_ptr<T[]> chunk = std::make_unique<T[]>(tuples_to_generate_now);
         for (size_t i = 0; i < tuples_to_generate_now;) {
             auto [batch, count] = generator.getBatchOfTuples(tuples_to_generate_now - i);
-            if (count == 0 || batch == nullptr) {
-                break;
-            }
+            assert(!(count == 0 || batch == nullptr));
             std::copy(batch.get(), batch.get() + count, chunk.get() + i);
             i += count;
         }

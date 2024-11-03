@@ -55,13 +55,9 @@ public:
         if (generated_tuples >= max_generated_tuples) {
             return {std::unique_ptr<T[]>(nullptr), 0};
         }
-
-        if (current_batch_index != 0) {
-            generateBatchOfTuples();
-        }
+        generateBatchOfTuples();
 
         const auto length_of_batch = std::min(batch_size, max_generated_tuples - generated_tuples);
-        current_batch_index = length_of_batch;
 
         std::unique_ptr<T[]> batch_ptr = std::make_unique<T[]>(length_of_batch);
         std::copy(batch, batch + length_of_batch, batch_ptr.get());
@@ -74,13 +70,9 @@ public:
         if (generated_tuples >= max_generated_tuples) {
             return {std::unique_ptr<T[]>(nullptr), 0};
         }
-
-        if (current_batch_index != 0) {
-            generateBatchOfTuples();
-        }
+        generateBatchOfTuples();
 
         const auto length_of_batch = std::min(std::min(batch_size, max_generated_tuples - generated_tuples), max_tuples_generate);
-        current_batch_index = length_of_batch;
 
         std::unique_ptr<T[]> batch_ptr = std::make_unique<T[]>(length_of_batch);
         std::copy(batch, batch + length_of_batch, batch_ptr.get());

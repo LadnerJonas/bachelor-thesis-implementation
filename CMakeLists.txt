@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -DNDEBUG")
-set(CMAKE_CXX_FLAGS_PROFILE "-O2 -march=native -g -fno-omit-frame-pointer -fno-inline")
+set(CMAKE_CXX_FLAGS_PROFILE "-O2 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline")
 # PGO
 # (Instrumentation phase)
 set(PROFILE_DATA_DIR "${CMAKE_SOURCE_DIR}/profile_data")
