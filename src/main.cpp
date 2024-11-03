@@ -6,6 +6,7 @@
 
 #include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
+#include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
 
 constexpr size_t PAGE_SIZE = 5 * 1024 * 1024;
 constexpr size_t PARTITIONS = 1024;
@@ -17,6 +18,31 @@ void test_radix_orchestrator(size_t num_tuples) {
     auto time_start = std::chrono::high_resolution_clock::now();
 
     RadixOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    orchestrator.run();
+    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+    auto time_end = std::chrono::high_resolution_clock::now();
+
+    auto actual_tuples = 0u;
+    for (auto tuples: written_tuples) {
+        actual_tuples += tuples;
+    }
+
+    if (num_tuples == actual_tuples) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed: " << actual_tuples << "/" << num_tuples << std::endl;
+        exit(1);
+    }
+
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms" << std::endl;
+}
+
+template<typename Tt>
+void test_radix_selectiv_orchestrator(size_t num_tuples) {
+    std::cout << "Running selectiv radix orchestrator" << std::endl;
+    auto time_start = std::chrono::high_resolution_clock::now();
+
+    RadixSelectiveOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
     orchestrator.run();
     auto written_tuples = orchestrator.get_written_tuples_per_partition();
     auto time_end = std::chrono::high_resolution_clock::now();
@@ -116,6 +142,7 @@ auto main() -> int {
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
     test_ondemand_orchestrator<Tt>(num_tuples);
     test_hybrid_orchestrator<Tt>(num_tuples);
+    test_radix_selectiv_orchestrator<Tt>(num_tuples);
 
     // auto time_start = std::chrono::high_resolution_clock::now();
     // ContinuousMaterialization<Tt> materialization(num_tuples);
