@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 3.20.4)
-project(prototype)
+project(implementation)
 
 set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fsanitize=address,undefined -D_GLIBCXX_DEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_PROFILE "-O2 -march=native -g -fno-omit-frame-pointer -fno-inline")
+# PGO
+# (Instrumentation phase)
+set(PROFILE_DATA_DIR "${CMAKE_SOURCE_DIR}/profile_data")
+set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O2 -march=native -fprofile-generate=${PROFILE_DATA_DIR} -DNDEBUG")
+# (Optimization phase using collected profile data)
+set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O2 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG")
+
 
 include_directories(include)
 
@@ -39,4 +47,14 @@ add_custom_target(clang_format_tidy
         COMMAND ${CMAKE_COMMAND} --build . --target format
         COMMAND ${CMAKE_COMMAND} --build . --target tidy
         COMMENT "Running clang-format and clang-tidy on modified .cpp and .hpp files"
+)
+
+# Path to the renaming script
+set(RENAME_SCRIPT "${CMAKE_SOURCE_DIR}/profile_data/rename-profile-files.sh")
+
+add_custom_target(run_rename_script
+        COMMAND ${CMAKE_COMMAND} -E echo "Running pre-build renaming script..."
+        COMMAND bash ${RENAME_SCRIPT}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Renaming .gcda files to match PGO_OPTIMIZE directory structure"
 )

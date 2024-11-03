@@ -47,7 +47,6 @@ void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page
     for (size_t i = 0; i < sub_chunks; ++i) {
         auto current_chunk_size = std::min(sub_chunk_size, proposed_chunk_size - i * sub_chunk_size);
         auto [chunk, chunk_size] = chunk_creator.getChunkOfTuples(current_chunk_size);
-        assert(proposed_chunk_size == chunk_size);
         handle_sub_chunk<T, partitions, page_size>(page_manager, chunk, chunk_size);//time_start
     }
 }

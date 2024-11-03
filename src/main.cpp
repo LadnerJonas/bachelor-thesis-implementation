@@ -14,6 +14,7 @@
 
 template<typename Tt>
 void test_radix_orchestrator(size_t num_tuples) {
+    std::cout << "Running radix orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
 
     RadixOrchestrator<Tt, 1024> orchestrator(num_tuples, 16);
@@ -38,6 +39,7 @@ void test_radix_orchestrator(size_t num_tuples) {
 
 template<typename Tt>
 void test_ondemand_orchestrator(size_t num_tuples) {
+    std::cout << "Running on-demand orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
     OnDemandOrchestrator<Tt, 32> orchestrator(num_tuples, 1);
     orchestrator.run();
@@ -59,6 +61,7 @@ void test_ondemand_orchestrator(size_t num_tuples) {
 
 template<typename Tt>
 void test_ondemand_single_thread_orchestrator(size_t num_tuples) {
+    std::cout << "Running on-demand single thread orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
     OnDemandSingleThreadOrchestrator<Tt, 32> orchestrator(num_tuples);
     orchestrator.run();
@@ -80,6 +83,7 @@ void test_ondemand_single_thread_orchestrator(size_t num_tuples) {
 
 template<typename Tt>
 void test_hybrid_orchestrator(size_t num_tuples) {
+    std::cout << "Running hybrid orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
     HybridOrchestrator<Tt, 1024> orchestrator(num_tuples, 16);
     orchestrator.run();
@@ -102,17 +106,17 @@ void test_hybrid_orchestrator(size_t num_tuples) {
 }
 
 auto main() -> int {
-    using Tt = Tuple4;
+    using Tt = Tuple16;
     auto num_tuples = 240'000'000u;
     // auto num_tuples = 30000u;
     // auto num_tuples = 10000000u;
     double gb_of_data = static_cast<double>(num_tuples) * sizeof(Tt) / 1024 / 1024 / 1024;
     std::cout << "Generating " << num_tuples << " tuples (" << gb_of_data << "GB of data)" << std::endl;
 
-    // test_radix_orchestrator<Tt>(num_tuples);
+    test_radix_orchestrator<Tt>(num_tuples);
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
     test_ondemand_orchestrator<Tt>(num_tuples);
-    // test_hybrid_orchestrator<Tt>(num_tuples);
+    test_hybrid_orchestrator<Tt>(num_tuples);
 
     // auto time_start = std::chrono::high_resolution_clock::now();
     // ContinuousMaterialization<Tt> materialization(num_tuples);

@@ -202,6 +202,7 @@ int main() {
     benchmark_HybridOrchestrator<Tuple100, 32>(tuples_to_generate_base);
     benchmark_RadixSelectiveOrchestrator<Tuple100, 32>(tuples_to_generate_base);
 
+    benchmark_OnDemandSingleThreadOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
     benchmark_OnDemandOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
     benchmark_RadixOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
     benchmark_HybridOrchestrator<Tuple100, 1024>(tuples_to_generate_base);
