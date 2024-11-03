@@ -39,7 +39,7 @@ public:
             allocate_new_page(i);
         }
     }
-    explicit HybridPageManager(size_t num_threads, size_t num_tuples)
+    explicit HybridPageManager(const size_t num_threads, size_t num_tuples)
         : num_threads(num_threads),
           thread_barrier(static_cast<long>(num_threads)), page_pool(num_tuples) {
         for (size_t i = 0; i < partitions; i++) {
@@ -47,7 +47,7 @@ public:
         }
     }
 
-    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<unsigned> &local_histogram) {
+    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
         std::unique_lock lock(global_histogram_mutex);
         std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
 
@@ -67,7 +67,7 @@ public:
                     continue;
                 }
 
-                auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+                const auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 
                 thread_write_info[partition].emplace_back(write_info);

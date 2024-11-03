@@ -18,9 +18,9 @@ public:
 
     void run() {
         materialization.materialize();
-        auto data = materialization.get_data();
+        const auto data = materialization.get_data();
         for (size_t i = 0; i < num_threads; ++i) {
-            size_t chunk_size = (num_tuples + num_threads - 1) / num_threads;
+            const size_t chunk_size = (num_tuples + num_threads - 1) / num_threads;
             const auto raw_pointer = data.get();
             threads.emplace_back([this, raw_pointer, i, chunk_size]() {
                 process_radix_chunk<T, partitions>(page_manager, raw_pointer + i * chunk_size, chunk_size);

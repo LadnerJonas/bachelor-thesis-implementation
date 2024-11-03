@@ -40,7 +40,7 @@ public:
         global_histogram.fill(0);
     }
 
-    void add_histogram_chunk(const std::vector<unsigned> &histogram_chunk) {
+    void add_histogram_chunk(const std::array<unsigned, partitions> &histogram_chunk) {
         {
             std::unique_lock lock(global_histogram_mutex);
             for (size_t i = 0; i < partitions; ++i) {
@@ -65,7 +65,7 @@ public:
         }
     }
 
-    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::vector<unsigned> &local_histogram) {
+    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
         std::unique_lock lock(global_histogram_mutex);
         std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
 

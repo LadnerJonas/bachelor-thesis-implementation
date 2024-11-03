@@ -20,12 +20,12 @@ public:
 
     void run() {
         for (size_t i = 0; i < num_threads; ++i) {
-            size_t chunk_size = num_tuples / num_threads;
+            size_t chunk_size = (num_tuples + num_threads - 1) / num_threads;
             //handle remainder
-            if (size_t remainder = num_tuples % num_threads; i < remainder) {
+            if (const size_t remainder = num_tuples % num_threads; i < remainder) {
                 ++chunk_size;
             }
-            threads.emplace_back([this, chunk_size]() {
+            threads.emplace_back([this, chunk_size] {
                 request_and_process_chunk<T, partitions>(page_manager, chunk_creator, chunk_size);
             });
         }

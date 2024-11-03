@@ -66,7 +66,7 @@ public:
         return std::make_pair(std::move(batch_ptr), length_of_batch);
     }
 
-    auto getBatchOfTuples(size_t max_tuples_generate) -> std::pair<std::unique_ptr<T[]>, size_t> {
+    auto getBatchOfTuples(const size_t max_tuples_generate) -> std::pair<std::unique_ptr<T[]>, size_t> {
         if (generated_tuples >= max_generated_tuples) {
             return {std::unique_ptr<T[]>(nullptr), 0};
         }

@@ -41,17 +41,17 @@ public:
             //store tuple starting from the end of the page_data
             tuple_offset_from_end = page_size - (entry_num + 1) * T::get_size_of_variable_data();
             const auto tuple_start = page_data + tuple_offset_from_end;
-            auto data_to_store = tuple.get_variable_data();
+            const auto data_to_store = tuple.get_variable_data();
             std::memcpy(tuple_start, &data_to_store, T::get_size_of_variable_data());
         }
 
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfo) + entry_num * sizeof(SlotInfo<T>));
+        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfo) + entry_num * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
     }
 
-    static void increase_tuple_count(const uint8_t *page_data, size_t tuple_count) {
-        const auto header = (HeaderInfo *) page_data;
+    static void increase_tuple_count(uint8_t *page_data, const size_t tuple_count) {
+        const auto header = reinterpret_cast<HeaderInfo *>(page_data);
         header->tuple_count += tuple_count;
     }
 

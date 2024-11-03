@@ -14,7 +14,7 @@ public:
     void materialize() {
         BatchedTupleGenerator<T, batch_size> generator(size, 42);
         while (true) {
-            auto [batch, count] = generator.getBatchOfTuples();
+            const auto [batch, count] = generator.getBatchOfTuples();
             if (count == 0 || batch == nullptr) {
                 break;
             }

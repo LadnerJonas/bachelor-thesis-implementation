@@ -9,9 +9,9 @@ class SlottedPagePool {
 
 public:
     explicit SlottedPagePool(const size_t tuples_to_store) {
-        auto tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
-        auto tuples_per_partition = (tuples_to_store + partitions - 1) / partitions;
-        auto pages = partitions * ((tuples_per_partition + tuples_per_page - 1) / tuples_per_page);
+        const auto tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
+        const auto tuples_per_partition = (tuples_to_store + partitions - 1) / partitions;
+        const auto pages = partitions * ((tuples_per_partition + tuples_per_page - 1) / tuples_per_page);
         max_pages = pages;
         page_data = std::make_shared<uint8_t[]>(pages * page_size);
     }

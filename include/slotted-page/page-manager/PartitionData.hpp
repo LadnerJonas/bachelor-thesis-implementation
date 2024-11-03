@@ -5,6 +5,6 @@
 template<typename T>
 struct PartitionData {
     std::vector<RawSlottedPage<T>> pages;
-    size_t current_page = 0;
-    size_t current_tuple_offset = 0;
+    unsigned current_page = 0;
+    unsigned current_tuple_offset = 0;
 };

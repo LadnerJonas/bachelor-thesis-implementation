@@ -2,5 +2,5 @@
 #include <atomic>
 
 struct HeaderInfo {
-    std::atomic<std::size_t> tuple_count;
+    std::atomic<unsigned> tuple_count;
 };

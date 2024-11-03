@@ -38,7 +38,7 @@ class Tuple16 : public BenchmarkTuple {
 public:
     Tuple16() : data{} {}
 
-    Tuple16(KeyType key, const std::array<uint32_t, 3> &data)
+    Tuple16(const KeyType key, const std::array<uint32_t, 3> &data)
         : BenchmarkTuple(key), data(data) {}
 
     Tuple16(const Tuple16 &other) = default;
@@ -58,7 +58,7 @@ class Tuple100 : public BenchmarkTuple {
 public:
     Tuple100() : data{} {}
 
-    Tuple100(KeyType key, const std::array<uint32_t, 24> &data)
+    Tuple100(const KeyType key, const std::array<uint32_t, 24> &data)
         : BenchmarkTuple(key), data(data) {}
 
     Tuple100(const Tuple100 &other) = default;

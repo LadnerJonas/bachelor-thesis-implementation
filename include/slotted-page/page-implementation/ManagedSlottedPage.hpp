@@ -54,7 +54,7 @@ public:
         return true;
     }
 
-    static size_t get_max_tuples(size_t page_size) {
+    static size_t get_max_tuples(const size_t page_size) {
         return (page_size - sizeof(HeaderInfo)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 
