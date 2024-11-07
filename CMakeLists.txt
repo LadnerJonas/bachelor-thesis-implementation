@@ -4,9 +4,9 @@ project(implementation)
 set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
 set(CMAKE_CXX_FLAGS_PROFILE "-O2 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline")
 # PGO
 # (Instrumentation phase)
