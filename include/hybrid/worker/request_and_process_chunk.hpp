@@ -12,30 +12,29 @@ void handle_sub_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
         const size_t partition = partition_function<T, partitions>(chunk[i]);
         ++histogram[partition];
     }
-    const auto write_info = page_manager.get_write_info(histogram);
-    std::array<PartitionInfo, partitions> partition_info = {};
+    std::vector<std::vector<PageWriteInfo<T>>> write_info = page_manager.get_write_info(histogram);
     for (size_t i = 0; i < chunk_size; ++i) {
         const size_t partition = partition_function<T, partitions>(chunk[i]);
-        auto info = write_info[partition][partition_info[partition].entry_index];
+        auto &info = write_info[partition].back();
 
-        if (info.tuples_to_write == partition_info[partition].written_tuples) {
-            RawSlottedPage<T>::increase_tuple_count(info.page_data, partition_info[partition].written_tuples);
-            ++partition_info[partition].entry_index;
-            partition_info[partition].written_tuples = 0;
-            info = write_info[partition][partition_info[partition].entry_index];
+        if (info.tuples_to_write == info.written_tuples) {
+            RawSlottedPage<T>::increase_tuple_count(info.page_data, info.written_tuples);
+            write_info[partition].pop_back();
+            i--;
+            continue;
         }
 
-        const size_t entry_num = info.start_num + partition_info[partition].written_tuples;
+        const size_t entry_num = info.start_num + info.written_tuples;
         RawSlottedPage<T>::write_tuple(info.page_data, page_size, chunk[i], entry_num);
 
-        ++partition_info[partition].written_tuples;
+        ++info.written_tuples;
     }
 
     for (size_t i = 0; i < partitions; ++i) {
-        const auto [entry_index, written_tuples] = partition_info[i];
-        if (written_tuples > 0) {
-            assert(write_info[i].size() > entry_index);
-            RawSlottedPage<T>::increase_tuple_count(write_info[i][entry_index].page_data, written_tuples);
+        if (write_info[i].size() > 0) {
+            if (const auto info = write_info[i].back(); info.written_tuples > 0) {
+                RawSlottedPage<T>::increase_tuple_count(info.page_data, info.written_tuples);
+            }
         }
     }
 }
