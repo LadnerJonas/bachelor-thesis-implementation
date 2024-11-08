@@ -24,7 +24,7 @@ class RadixPageManager {
 
     void allocate_new_page(size_t partition) {
         assert(page_pool.has_free_page());
-        partitions_data[partition].pages.emplace_back(RawSlottedPage<T>(page_size, page_pool.get_single_page()));
+        partitions_data[partition].pages.emplace_back(page_size, page_pool.get_single_page());
         partitions_data[partition].current_tuple_offset = 0;
     }
 

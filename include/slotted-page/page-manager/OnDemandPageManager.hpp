@@ -12,14 +12,14 @@ class OnDemandPageManager {
 public:
     OnDemandPageManager() {
         for (size_t i = 0; i < partitions; ++i) {
-            pages[i].emplace_back(ManagedSlottedPage<T>(page_size));
+            pages[i].emplace_back(page_size);
         }
     }
 
     void insert_tuple(const T &tuple, size_t partition) {
         std::unique_lock lock(partition_locks[partition].mutex);
         if (!pages[partition].back().add_tuple(tuple)) {
-            pages[partition].emplace_back(ManagedSlottedPage<T>(page_size));
+            pages[partition].emplace_back(page_size);
             pages[partition].back().add_tuple(tuple);
         }
     }
