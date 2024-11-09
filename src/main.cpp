@@ -137,6 +137,12 @@ auto main() -> int {
     // auto num_tuples = 66'000'000u;
     double gb_of_data = static_cast<double>(num_tuples) * sizeof(Tt) / 1024 / 1024 / 1024;
     std::cout << "Generating " << num_tuples << " tuples (" << gb_of_data << "GB of data)" << std::endl;
+    auto average_tuples_per_partition = (num_tuples + PARTITIONS - 1) / PARTITIONS;
+    auto max_tuples_per_page = RawSlottedPage<Tt>::get_max_tuples(PAGE_SIZE);
+
+    auto num_pages = PARTITIONS * static_cast<unsigned>((average_tuples_per_partition + max_tuples_per_page - 1) / max_tuples_per_page);
+    auto num_pages_gb = static_cast<double>(num_pages) * PAGE_SIZE / 1024 / 1024 / 1024;
+    std::cout << "Expecting " << num_pages << " pages (" << num_pages_gb << "GB of pages, " << num_pages / PARTITIONS << " pages per partition, " << 100 * average_tuples_per_partition / (static_cast<double>(max_tuples_per_page) * num_pages / PARTITIONS) << "% load factor)" << std::endl;
 
     test_radix_orchestrator<Tt>(num_tuples);
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
