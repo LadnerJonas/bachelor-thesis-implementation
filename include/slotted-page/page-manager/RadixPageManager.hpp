@@ -20,11 +20,10 @@ class RadixPageManager {
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
     std::once_flag distribute_flag;
-    SlottedPagePool<T, partitions, page_size> page_pool;
 
     void allocate_new_page(size_t partition) {
         assert(page_pool.has_free_page());
-        partitions_data[partition].pages.emplace_back(page_size, page_pool.get_single_page());
+        partitions_data[partition].pages.emplace_back(page_size);
         partitions_data[partition].current_tuple_offset = 0;
     }
 
@@ -32,11 +31,6 @@ public:
     explicit RadixPageManager(size_t num_threads)
         : num_threads(num_threads),
           thread_barrier(static_cast<long>(num_threads)) {
-        global_histogram.fill(0);
-    }
-    explicit RadixPageManager(size_t num_threads, size_t num_tuples)
-        : num_threads(num_threads),
-          thread_barrier(static_cast<long>(num_threads)), page_pool(num_tuples) {
         global_histogram.fill(0);
     }
 
@@ -74,7 +68,7 @@ public:
 
             while (tuples_to_write > 0) {
                 const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-                auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+                auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
                 const size_t free_space = tuples_per_page - current_tuple_offset;
                 const size_t tuples_for_page = std::min(free_space, tuples_to_write);

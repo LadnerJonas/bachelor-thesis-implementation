@@ -23,11 +23,10 @@ class HybridPageManager {
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
     std::once_flag distribute_flag;
-    SlottedPagePool<T, partitions, page_size> page_pool;
 
     void allocate_new_page(size_t partition) {
         assert(page_pool.has_free_page());
-        partitions_data[partition].pages.emplace_back(page_size, page_pool.get_single_page());
+        partitions_data[partition].pages.emplace_back(page_size);
         partitions_data[partition].current_tuple_offset = 0;
     }
 
@@ -35,13 +34,6 @@ public:
     explicit HybridPageManager(size_t num_threads)
         : num_threads(num_threads),
           thread_barrier(static_cast<long>(num_threads)) {
-        for (size_t i = 0; i < partitions; i++) {
-            allocate_new_page(i);
-        }
-    }
-    explicit HybridPageManager(const size_t num_threads, size_t num_tuples)
-        : num_threads(num_threads),
-          thread_barrier(static_cast<long>(num_threads)), page_pool(num_tuples) {
         for (size_t i = 0; i < partitions; i++) {
             allocate_new_page(i);
         }
@@ -67,7 +59,7 @@ public:
                     continue;
                 }
 
-                const auto current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+                const auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
                 PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 
                 thread_write_info[partition].emplace_back(write_info);

@@ -13,7 +13,7 @@ class RadixSelectiveOrchestrator {
     size_t num_tuples;
 
 public:
-    explicit RadixSelectiveOrchestrator(size_t num_tuples, size_t num_threads) : materialization(num_tuples), page_manager(num_threads, num_tuples), num_threads(num_threads), num_tuples(num_tuples) {
+    explicit RadixSelectiveOrchestrator(size_t num_tuples, size_t num_threads) : materialization(num_tuples), page_manager(num_threads), num_threads(num_threads), num_tuples(num_tuples) {
     }
 
     void run() {

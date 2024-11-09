@@ -12,27 +12,27 @@
 template<typename T>
 class RawSlottedPage {
     size_t page_size;
-    uint8_t *page_data;
+    std::shared_ptr<uint8_t[]> page_data;
     HeaderInfo *header;
     SlotInfo<T> *slots;
     T *data_section;
     size_t max_tuples;
-    void init_page(size_t page_size) {
-        max_tuples = get_max_tuples(page_size);
-        header = reinterpret_cast<HeaderInfo *>(page_data);
-        header->tuple_count = 0;
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfo));
-        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * T::get_size_of_variable_data());
-    }
 
 public:
-    explicit RawSlottedPage(size_t page_size, uint8_t *page_data2)
-        : page_size(page_size), page_data(page_data2) {
-        init_page(page_size);
+    explicit RawSlottedPage(size_t page_size)
+        : page_size(page_size) {
+        page_data = std::make_shared<uint8_t[]>(page_size);
+
+        max_tuples = get_max_tuples(page_size);
+        header = reinterpret_cast<HeaderInfo *>(page_data.get());
+        header->tuple_count = 0;
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo));
+        data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * T::get_size_of_variable_data());
     }
 
     uint8_t *get_page_data() const {
-        return page_data;
+        return page_data.get();
+        ;
     }
 
     static void write_tuple(uint8_t *page_data, const size_t page_size, T &tuple, unsigned entry_num) {
