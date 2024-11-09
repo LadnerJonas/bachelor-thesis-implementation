@@ -37,184 +37,67 @@ void benchmark_non_batched(size_t tuples_to_generate) {
     }
 }
 
-constexpr size_t batch_sizes[] = {8, 32, 512, 2048};
+template <typename T, size_t batch_size>
+void run_benchmarks(BenchmarkParameters& params, size_t tuples_to_generate, bool print_header = false) {
+    // Set batch size parameter
+    params.setParam("D-batch_size", batch_size);
+
+    // Run single tuple benchmark
+    params.setParam("A-Benchmark tuple-generator", "single tuple");
+    {
+        PerfEventBlock e(100'000, params, print_header);
+        benchmark_non_batched<T, batch_size>(tuples_to_generate);
+    }
+
+    // Run tuple batch benchmark
+    params.setParam("A-Benchmark tuple-generator", "tuple batch");
+    {
+        PerfEventBlock e(100'000, params, false);
+        benchmark_batched<T, batch_size>(tuples_to_generate);
+    }
+}
+template<typename T>
+static size_t get_tuple_num_scaling_value() {
+    if (std::is_same_v<T, Tuple100>) {
+        return 1;
+    }
+    if (std::is_same_v<T, Tuple16>) {
+        return sizeof(Tuple100) / sizeof(Tuple16);
+    }
+    if (std::is_same_v<T, Tuple4>) {
+        return sizeof(Tuple100) / sizeof(Tuple4);
+    }
+    return 1;
+}
+constexpr size_t batch_sizes[] = {32, 64, 512, 1024};
 int main() {
     BenchmarkParameters params;
-    for (size_t tuples_to_generate = 40'000'000u; tuples_to_generate <= 40'000'000u; tuples_to_generate *= 10) {
-        tuples_to_generate = tuples_to_generate * (sizeof(Tuple100) / sizeof(Tuple16));
+    for (size_t tuples_to_generate_base = 40'000'000u; tuples_to_generate_base <= 40'000'000u; tuples_to_generate_base *= 10) {
+        size_t tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple16>();
         params.setParam("B-Tuples", tuples_to_generate);
         // Tuple16 benchmarks for all batch sizes
         params.setParam("C-tuple_size", sizeof(Tuple16));
-        params.setParam("D-batch_size", batch_sizes[0]);
-        // Batch size 0
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, true);
-            benchmark_non_batched<Tuple16, batch_sizes[0]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[0]>(tuples_to_generate);
-        }
-
-        // Batch size 1
-        params.setParam("D-batch_size", batch_sizes[1]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple16, batch_sizes[1]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[1]>(tuples_to_generate);
-        }
-
-        // Batch size 2
-        params.setParam("D-batch_size", batch_sizes[2]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple16, batch_sizes[2]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[2]>(tuples_to_generate);
-        }
-
-        // Batch size 3
-        params.setParam("D-batch_size", batch_sizes[3]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple16, batch_sizes[3]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple16, batch_sizes[3]>(tuples_to_generate);
-        }
-
-        // Batch size 4
-        // params.setParam("D-batch_size", batch_sizes[4]);
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_non_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
-        // }
-        //
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_batched<Tuple16, batch_sizes[4]>(tuples_to_generate);
-        // }
-        //
-        // // Batch size 5
-        // params.setParam("D-batch_size", batch_sizes[5]);
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_non_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
-        // }
-        //
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_batched<Tuple16, batch_sizes[5]>(tuples_to_generate);
-        // }
+        run_benchmarks<Tuple16, batch_sizes[0]>(params, tuples_to_generate, true);
+        run_benchmarks<Tuple16, batch_sizes[1]>(params, tuples_to_generate);
+        run_benchmarks<Tuple16, batch_sizes[2]>(params, tuples_to_generate);
+        run_benchmarks<Tuple16, batch_sizes[3]>(params, tuples_to_generate);
 
         // Tuple100 benchmarks for all batch sizes
-        params.setParam("C-tuple_size", sizeof(Tuple100));
-        params.setParam("D-batch_size", batch_sizes[0]);
-        tuples_to_generate = tuples_to_generate / (sizeof(Tuple100) / sizeof(Tuple16));
+        tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple100>();
         params.setParam("B-Tuples", tuples_to_generate);
-        // Batch size 0
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, true);
-            benchmark_non_batched<Tuple100, batch_sizes[0]>(tuples_to_generate);
-        }
+        params.setParam("C-tuple_size", sizeof(Tuple100));
+        run_benchmarks<Tuple100, batch_sizes[0]>(params, tuples_to_generate, true);
+        run_benchmarks<Tuple100, batch_sizes[1]>(params, tuples_to_generate);
+        run_benchmarks<Tuple100, batch_sizes[2]>(params, tuples_to_generate);
+        run_benchmarks<Tuple100, batch_sizes[3]>(params, tuples_to_generate);
 
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[0]>(tuples_to_generate);
-        }
-
-        // Batch size 1
-        params.setParam("D-batch_size", batch_sizes[1]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple100, batch_sizes[1]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[1]>(tuples_to_generate);
-        }
-
-        // Batch size 2
-        params.setParam("D-batch_size", batch_sizes[2]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple100, batch_sizes[2]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[2]>(tuples_to_generate);
-        }
-
-        // Batch size 3
-        params.setParam("D-batch_size", batch_sizes[3]);
-        {
-            params.setParam("A-Benchmark tuple-generator", "single tuple");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_non_batched<Tuple100, batch_sizes[3]>(tuples_to_generate);
-        }
-
-        {
-            params.setParam("A-Benchmark tuple-generator", "tuple batch");
-            PerfEventBlock e(1'000'000, params, false);
-            benchmark_batched<Tuple100, batch_sizes[3]>(tuples_to_generate);
-        }
-
-        // Batch size 4
-        // params.setParam("D-batch_size", batch_sizes[4]);
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_non_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
-        // }
-        //
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_batched<Tuple100, batch_sizes[4]>(tuples_to_generate);
-        // }
-        //
-        // // Batch size 5
-        // params.setParam("D-batch_size", batch_sizes[5]);
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "single tuple");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_non_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
-        // }
-        //
-        // {
-        //     params.setParam("A-Benchmark tuple-generator", "tuple batch");
-        //     PerfEventBlock e(1'000'000, params, false);
-        //     benchmark_batched<Tuple100, batch_sizes[5]>(tuples_to_generate);
-        // }
+        // Tuple4 benchmarks for all batch sizes
+        tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple4>();
+        params.setParam("B-Tuples", tuples_to_generate);
+        params.setParam("C-tuple_size", sizeof(Tuple4));
+        run_benchmarks<Tuple4, batch_sizes[0]>(params, tuples_to_generate, true);
+        run_benchmarks<Tuple4, batch_sizes[1]>(params, tuples_to_generate);
+        run_benchmarks<Tuple4, batch_sizes[2]>(params, tuples_to_generate);
+        run_benchmarks<Tuple4, batch_sizes[3]>(params, tuples_to_generate);
     }
 }
