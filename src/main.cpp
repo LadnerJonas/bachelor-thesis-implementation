@@ -7,6 +7,7 @@
 #include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
+#include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr size_t PAGE_SIZE = 5 * 1024 * 1024;
 constexpr size_t PARTITIONS = 1024;
@@ -132,17 +133,29 @@ void test_hybrid_orchestrator(size_t num_tuples) {
 
 auto main() -> int {
     using Tt = Tuple16;
-    auto num_tuples = 240'000'000u;
+    std::cout << "Running with tuple type: " << typeid(Tt).name() << std::endl;
+    auto num_tuples_base = 40'000'000u;
+    auto tuple_count_factor = get_tuple_num_scaling_value<Tt>();
+    auto num_tuples = static_cast<unsigned>(num_tuples_base * tuple_count_factor);
     // auto num_tuples = 30000u;
     // auto num_tuples = 66'000'000u;
-    double gb_of_data = static_cast<double>(num_tuples) * sizeof(Tt) / 1024 / 1024 / 1024;
-    std::cout << "Generating " << num_tuples << " tuples (" << gb_of_data << "GB of data)" << std::endl;
+    auto net_needed_storage = static_cast<double>(num_tuples * sizeof(Tt));
+    auto net_needed_storage_gb = net_needed_storage / 1024 / 1024 / 1024;
+    std::cout << "Generating " << num_tuples << " tuples (" << net_needed_storage_gb << "GB of data)" << std::endl;
     auto average_tuples_per_partition = (num_tuples + PARTITIONS - 1) / PARTITIONS;
     auto max_tuples_per_page = RawSlottedPage<Tt>::get_max_tuples(PAGE_SIZE);
 
     auto num_pages = PARTITIONS * static_cast<unsigned>((average_tuples_per_partition + max_tuples_per_page - 1) / max_tuples_per_page);
-    auto num_pages_gb = static_cast<double>(num_pages) * PAGE_SIZE / 1024 / 1024 / 1024;
-    std::cout << "Expecting " << num_pages << " pages (" << num_pages_gb << "GB of pages, " << num_pages / PARTITIONS << " pages per partition, " << 100 * average_tuples_per_partition / (static_cast<double>(max_tuples_per_page) * num_pages / PARTITIONS) << "% load factor)" << std::endl;
+    auto pages_size = static_cast<double>(num_pages) * PAGE_SIZE;
+    auto pages_size_gb = pages_size / 1024 / 1024 / 1024;
+
+    auto storage_overhead = static_cast<double>(num_tuples * sizeof(SlotInfo<Tt>));
+    auto storage_overhead_gb = storage_overhead / 1024 / 1024 / 1024;
+    auto total_storage_gb = std::is_same_v<Tt, Tuple4> ? storage_overhead_gb : net_needed_storage_gb + storage_overhead_gb;
+    auto load_factor = total_storage_gb / pages_size_gb;
+
+    std::cout << "Needed Storage: " << total_storage_gb << "GB (" << net_needed_storage_gb << "GB (net) + " << storage_overhead_gb << "GB (overhead), " << 100 * net_needed_storage_gb / total_storage_gb << "% + " << 100 * storage_overhead_gb / total_storage_gb << "%)" << std::endl;
+    std::cout << "Expecting " << num_pages << " pages (" << pages_size_gb << "GB of pages, " << num_pages / PARTITIONS << " pages per partition, " << 100 * load_factor << "% page load factor)" << std::endl;
 
     test_radix_orchestrator<Tt>(num_tuples);
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);

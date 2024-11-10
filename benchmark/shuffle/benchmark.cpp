@@ -6,6 +6,7 @@
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 #include "tuple-types/tuple-types.hpp"
+#include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr unsigned SLEEP_TIME_MS = 500;
 
@@ -34,29 +35,16 @@ void setup_benchmark_params(BenchmarkParameters &params, const std::string &impl
     params.setParam("F-Threads", threads);
 }
 
-template<typename T>
-size_t get_tuple_num_scaling_value() {
-    if (std::is_same_v<T, Tuple100>) {
-        return 1;
-    }
-    if (std::is_same_v<T, Tuple16>) {
-        return sizeof(Tuple100) / sizeof(Tuple16);
-    }
-    if (std::is_same_v<T, Tuple4>) {
-        return sizeof(Tuple100) / sizeof(Tuple4);
-    }
-    return 1;
-}
 
 template<typename T, unsigned... Partitions>
-void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+void benchmark_RadixOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "RadixOrchestrator               ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
                 RadixOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -71,16 +59,16 @@ void benchmark_RadixOrchestrator(unsigned tuples_to_generate_base) {
 }
 
 template<typename T, unsigned... Partitions>
-void benchmark_RadixSelectiveOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+void benchmark_RadixSelectiveOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "RadixSelectiveOrchestrator      ", tuples_to_generate, partition, threads);
                 constexpr unsigned k = 32;
                 params.setParam("G-k", k);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
                 RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -98,14 +86,14 @@ void benchmark_RadixSelectiveOrchestrator(unsigned tuples_to_generate_base) {
 }
 
 template<typename T, unsigned... Partitions>
-void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+void benchmark_OnDemandOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "OnDemandOrchestrator            ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
                 OnDemandOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -123,14 +111,14 @@ void benchmark_OnDemandOrchestrator(unsigned tuples_to_generate_base) {
 }
 
 template<typename T, unsigned... Partitions>
-void benchmark_OnDemandSingleThreadOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+void benchmark_OnDemandSingleThreadOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
             unsigned threads = 1;
             BenchmarkParameters params;
             setup_benchmark_params<T>(params, "OnDemandSingleThreadOrchestrator", tuples_to_generate, partition, threads);
-            PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
+            PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
             OnDemandSingleThreadOrchestrator<T, partition> orchestrator(tuples_to_generate);
             orchestrator.run();
@@ -146,14 +134,14 @@ void benchmark_OnDemandSingleThreadOrchestrator(unsigned tuples_to_generate_base
 }
 
 template<typename T, unsigned... Partitions>
-void benchmark_HybridOrchestrator(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    for (unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor; tuples_to_generate <= 1 * tuples_to_generate_base * tuple_count_factor; tuples_to_generate += tuples_to_generate_base * tuple_count_factor) {
+void benchmark_HybridOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "HybridOrchestrator              ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == tuples_to_generate_base * tuple_count_factor && threads == 1);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
                 HybridOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
@@ -170,9 +158,9 @@ void benchmark_HybridOrchestrator(unsigned tuples_to_generate_base) {
     }
 }
 template<typename T>
-void warmup_run(unsigned tuples_to_generate_base) {
-    unsigned tuple_count_factor = get_tuple_num_scaling_value<T>();
-    unsigned tuples_to_generate = tuples_to_generate_base * tuple_count_factor;
+void warmup_run(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor);
     OnDemandSingleThreadOrchestrator<T, 1024> orchestrator(tuples_to_generate);
     orchestrator.run();
 
@@ -182,7 +170,7 @@ void warmup_run(unsigned tuples_to_generate_base) {
 }
 
 template<typename T, unsigned... Partitions>
-void run_benchmark_on_all_implementations(unsigned tuples_to_generate_base) {
+void run_benchmark_on_all_implementations(const unsigned tuples_to_generate_base) {
     warmup_run<T>(tuples_to_generate_base);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));

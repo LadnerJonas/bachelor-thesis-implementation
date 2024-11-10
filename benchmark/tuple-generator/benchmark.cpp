@@ -1,6 +1,7 @@
 #include "../external/perfevent/PerfEvent.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 #include "tuple-types/tuple-types.hpp"
+#include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr size_t SEED = 42;
 
@@ -37,8 +38,8 @@ void benchmark_non_batched(size_t tuples_to_generate) {
     }
 }
 
-template <typename T, size_t batch_size>
-void run_benchmarks(BenchmarkParameters& params, size_t tuples_to_generate, bool print_header = false) {
+template<typename T, size_t batch_size>
+void run_benchmarks(BenchmarkParameters &params, size_t tuples_to_generate, bool print_header = false) {
     // Set batch size parameter
     params.setParam("D-batch_size", batch_size);
 
@@ -56,24 +57,11 @@ void run_benchmarks(BenchmarkParameters& params, size_t tuples_to_generate, bool
         benchmark_batched<T, batch_size>(tuples_to_generate);
     }
 }
-template<typename T>
-static size_t get_tuple_num_scaling_value() {
-    if (std::is_same_v<T, Tuple100>) {
-        return 1;
-    }
-    if (std::is_same_v<T, Tuple16>) {
-        return sizeof(Tuple100) / sizeof(Tuple16);
-    }
-    if (std::is_same_v<T, Tuple4>) {
-        return sizeof(Tuple100) / sizeof(Tuple4);
-    }
-    return 1;
-}
 constexpr size_t batch_sizes[] = {32, 64, 512, 1024};
 int main() {
     BenchmarkParameters params;
     for (size_t tuples_to_generate_base = 40'000'000u; tuples_to_generate_base <= 40'000'000u; tuples_to_generate_base *= 10) {
-        size_t tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple16>();
+        auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * get_tuple_num_scaling_value<Tuple16>());
         params.setParam("B-Tuples", tuples_to_generate);
         // Tuple16 benchmarks for all batch sizes
         params.setParam("C-tuple_size", sizeof(Tuple16));
@@ -83,7 +71,7 @@ int main() {
         run_benchmarks<Tuple16, batch_sizes[3]>(params, tuples_to_generate);
 
         // Tuple100 benchmarks for all batch sizes
-        tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple100>();
+        tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * get_tuple_num_scaling_value<Tuple100>());
         params.setParam("B-Tuples", tuples_to_generate);
         params.setParam("C-tuple_size", sizeof(Tuple100));
         run_benchmarks<Tuple100, batch_sizes[0]>(params, tuples_to_generate, true);
@@ -92,7 +80,7 @@ int main() {
         run_benchmarks<Tuple100, batch_sizes[3]>(params, tuples_to_generate);
 
         // Tuple4 benchmarks for all batch sizes
-        tuples_to_generate = tuples_to_generate_base * get_tuple_num_scaling_value<Tuple4>();
+        tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * get_tuple_num_scaling_value<Tuple4>());
         params.setParam("B-Tuples", tuples_to_generate);
         params.setParam("C-tuple_size", sizeof(Tuple4));
         run_benchmarks<Tuple4, batch_sizes[0]>(params, tuples_to_generate, true);
