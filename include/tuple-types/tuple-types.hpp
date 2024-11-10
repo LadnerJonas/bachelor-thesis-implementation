@@ -48,6 +48,7 @@ public:
         return data;
     }
     static auto get_size_of_variable_data() {
+        assert(sizeof(std::array<uint32_t, 3>) == 12);
         return sizeof(std::array<uint32_t, 3>);
     }
 };
@@ -68,6 +69,7 @@ public:
         return data;
     }
     static auto get_size_of_variable_data() {
-        return sizeof(std::array<uint32_t, 3>);
+        assert(sizeof(std::array<uint32_t, 24>) == 96);
+        return sizeof(std::array<uint32_t, 24>);
     }
 };
