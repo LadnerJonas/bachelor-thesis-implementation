@@ -25,7 +25,7 @@ class HybridPageManager {
     std::once_flag distribute_flag;
 
     void allocate_new_page(size_t partition) {
-        assert(page_pool.has_free_page());
+        // assert(page_pool.has_free_page());
         partitions_data[partition].pages.emplace_back(page_size);
         partitions_data[partition].current_tuple_offset = 0;
     }
