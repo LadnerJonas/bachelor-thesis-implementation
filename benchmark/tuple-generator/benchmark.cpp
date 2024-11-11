@@ -57,7 +57,7 @@ void run_benchmarks(BenchmarkParameters &params, size_t tuples_to_generate, bool
         benchmark_batched<T, batch_size>(tuples_to_generate);
     }
 }
-constexpr size_t batch_sizes[] = {32, 64, 512, 1024};
+constexpr size_t batch_sizes[] = {32, 1024, 2048, 4096};
 int main() {
     BenchmarkParameters params;
     for (size_t tuples_to_generate_base = 40'000'000u; tuples_to_generate_base <= 40'000'000u; tuples_to_generate_base *= 10) {
