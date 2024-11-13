@@ -106,10 +106,13 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
 
         min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
         if with_baseline:
+            tuple_generation_time_map = [[1.18,0.39], [2.23,0.78], [3.68,1.19]]
             # Add a horizontal line for tuple generation time
-            tuple_generation_time = 2.3 if "server" in path else 0.8
+            main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
+            sub_index = 0 if "server" in path else 1
+            tuple_generation_time = tuple_generation_time_map[main_index][sub_index]
             ax.axhline(y=tuple_generation_time, color='purple', linestyle='--', linewidth=1.5,
-                       label=f"Tuple Generation ({tuple_generation_time})")
+                       label=f"Tuple Generation ({tuple_generation_time} {y_unit})")
             min_y, max_y = min(df_group[y_column].min(), tuple_generation_time), df_group[y_column].max()
 
         y_scale = max_y / min_y
