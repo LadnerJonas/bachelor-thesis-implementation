@@ -11,28 +11,61 @@
 template<typename T>
 class ManagedSlottedPage {
     size_t page_size;
-    std::shared_ptr<uint8_t[]> page_data;
+    uint8_t * page_data;
     HeaderInfoNonAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
     size_t max_tuples;
     size_t current_index = 0;
+    bool has_to_be_freed = true;
 
 public:
     explicit ManagedSlottedPage(size_t page_size)
         : page_size(page_size) {
         // Compute max possible tuples based on page_data size and tuple/slot size
         max_tuples = get_max_tuples(page_size);
-        page_data = std::make_shared<uint8_t[]>(page_size);
+        page_data = new uint8_t[page_size];
 
         // Set up header, slots, and data pointers within the page_data
-        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data.get());
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic));
-        data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * sizeof(T));
+        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data);
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic));
+        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
 
         // Initialize header values
         header->tuple_count = 0;
     }
+
+    ManagedSlottedPage(size_t page_size, uint8_t *page_data)
+        : page_size(page_size), page_data(page_data), has_to_be_freed(false) {
+        // Compute max possible tuples based on page_data size and tuple/slot size
+        max_tuples = get_max_tuples(page_size);
+
+        // Set up header, slots, and data pointers within the page_data
+        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data);
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic));
+        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
+        // Initialize header values
+        header->tuple_count = 0;
+    }
+
+    ~ManagedSlottedPage() {
+        // std::cout << "ManagedSlottedPage destructor" << std::endl;
+        if (has_to_be_freed) {
+            delete[] page_data;
+        }
+    }
+
+    // move constructor
+    ManagedSlottedPage(ManagedSlottedPage &&other) noexcept
+        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), max_tuples(other.max_tuples), current_index(other.current_index), has_to_be_freed(other.has_to_be_freed) {
+        other.page_data = nullptr;
+        other.header = nullptr;
+        other.slots = nullptr;
+        other.data_section = nullptr;
+        other.has_to_be_freed = false;
+    }
+    //copy constructor delete
+    ManagedSlottedPage(const ManagedSlottedPage &other) = delete;
 
     bool add_tuple(const T &tuple) {
         if (header->tuple_count == max_tuples) {
@@ -42,11 +75,11 @@ public:
         if (T::get_size_of_variable_data() > 0) {
             //store tuple starting from the end of the page_data
             tuple_offset_from_end = page_size - (current_index + 1) * T::get_size_of_variable_data();
-            auto tuple_start = page_data.get() + tuple_offset_from_end;
+            auto tuple_start = page_data + tuple_offset_from_end;
             std::memcpy(tuple_start, &tuple, T::get_size_of_variable_data());
         }
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic) + current_index * sizeof(SlotInfo<T>));
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + current_index * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
 
         // Increase tuple count
@@ -55,7 +88,7 @@ public:
     }
 
     static size_t get_max_tuples(const size_t page_size) {
-        return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
+        return (page_size - sizeof(HeaderInfoNonAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 
     std::optional<T> get_tuple(const typename T::KeyType &key) const {

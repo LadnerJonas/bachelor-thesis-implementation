@@ -7,7 +7,7 @@ void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T,
     std::array<unsigned, partitions> buffer_index = {0};
     const auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
     const auto buffer_size_per_partition = total_buffer_size / partitions;
-    std::shared_ptr<T[]> buffer = std::make_shared<T[]>(total_buffer_size);
+    thread_local std::shared_ptr<T[]> buffer = std::make_shared<T[]>(total_buffer_size);
 
     for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
         for (size_t i = 0; i < batch_size; ++i) {
