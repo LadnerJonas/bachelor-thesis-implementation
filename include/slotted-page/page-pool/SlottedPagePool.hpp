@@ -4,9 +4,8 @@
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class SlottedPagePool {
     std::shared_ptr<uint8_t[]> page_data;
-    size_t current_page = 0;
-    size_t max_pages = 0;
-    std::mutex mutex;
+    std::atomic<unsigned> current_page = 0;
+    unsigned max_pages = 0;
 
 public:
     SlottedPagePool() = default;
@@ -19,7 +18,6 @@ public:
     }
 
     auto get_single_page() {
-        std::lock_guard lock(mutex);
         assert(current_page < max_pages);
         return page_data.get() + current_page++ * page_size;
     }
