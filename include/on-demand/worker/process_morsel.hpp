@@ -1,9 +1,9 @@
 #pragma once
-#include "on-demand/morsel-creation/MorselCreator.hpp"
+#include "common/morsel-creation/MorselCreator.hpp"
 #include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "util/partitioning_function.hpp"
 
-template<typename T, size_t partitions, size_t page_size = 1 * 1024 * 1024>
+template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel(MorselCreator<T> &morsel_creator, OnDemandPageManager<T, partitions, page_size> &page_manager) {
     for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch;
          std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {

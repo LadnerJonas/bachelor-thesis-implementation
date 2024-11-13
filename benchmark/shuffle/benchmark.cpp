@@ -4,6 +4,7 @@
 #include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
 #include "radix/orchestration/RadixOrchestrator.hpp"
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
+#include "smb/orchestration/SmbOrchestrator.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 #include "tuple-types/tuple-types.hpp"
 #include "util/get_tuple_num_scaling_value.hpp"
@@ -71,6 +72,31 @@ void benchmark_RadixSelectiveOrchestrator(const unsigned tuples_to_generate_base
                 PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
                 RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
+                orchestrator.run();
+
+                // Verify the result
+                auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
+        };
+
+        // Use fold expression to call run_benchmark with each partition value
+        (run_benchmark(std::integral_constant<unsigned, Partitions>{}), ...);
+    }
+}
+
+template<typename T, unsigned... Partitions>
+void benchmark_SmbOrchestrator(const unsigned tuples_to_generate_base) {
+    auto tuple_count_factor = get_tuple_num_scaling_value<T>();
+    for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
+        auto run_benchmark = [&](auto partition) {
+            for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
+                BenchmarkParameters params;
+                setup_benchmark_params<T>(params, "SmbOrchestrator                 ", tuples_to_generate, partition, threads);
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+
+                SmbOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                 orchestrator.run();
 
                 // Verify the result
@@ -177,6 +203,8 @@ void run_benchmark_on_all_implementations(const unsigned tuples_to_generate_base
     benchmark_OnDemandSingleThreadOrchestrator<T, Partitions...>(tuples_to_generate_base);
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
     benchmark_OnDemandOrchestrator<T, Partitions...>(tuples_to_generate_base);
+    std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
+    benchmark_SmbOrchestrator<T, Partitions...>(tuples_to_generate_base);
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
     benchmark_RadixOrchestrator<T, Partitions...>(tuples_to_generate_base);
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));

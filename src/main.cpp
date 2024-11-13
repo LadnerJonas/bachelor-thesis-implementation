@@ -7,6 +7,7 @@
 #include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
+#include "smb/orchestration/SmbOrchestrator.hpp"
 #include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr size_t PAGE_SIZE = 5 * 1024 * 1024;
@@ -86,6 +87,28 @@ void test_ondemand_orchestrator(size_t num_tuples) {
 }
 
 template<typename Tt>
+void test_smb_orchestrator(size_t num_tuples) {
+    std::cout << "Running smb orchestrator" << std::endl;
+    auto time_start = std::chrono::high_resolution_clock::now();
+    SmbOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    orchestrator.run();
+
+    auto written_tuples_per_partition = orchestrator.get_written_tuples_per_partition();
+    auto actual_tuples = 0u;
+    for (auto tuples: written_tuples_per_partition) {
+        actual_tuples += tuples;
+    }
+
+    if (num_tuples == actual_tuples) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed: " << actual_tuples << "/" << num_tuples << std::endl;
+        exit(1);
+    }
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
+}
+
+template<typename Tt>
 void test_ondemand_single_thread_orchestrator(size_t num_tuples) {
     std::cout << "Running on-demand single thread orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
@@ -135,6 +158,7 @@ auto main() -> int {
     using Tt = Tuple16;
     std::cout << "Running with tuple type: " << typeid(Tt).name() << std::endl;
     auto num_tuples_base = 40'000'000u;
+    // auto num_tuples_base = 30000u;
     auto tuple_count_factor = get_tuple_num_scaling_value<Tt>();
     auto num_tuples = static_cast<unsigned>(num_tuples_base * tuple_count_factor);
     // auto num_tuples = 30000u;
@@ -159,6 +183,7 @@ auto main() -> int {
 
     test_radix_orchestrator<Tt>(num_tuples);
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
+    test_smb_orchestrator<Tt>(num_tuples);
     test_ondemand_orchestrator<Tt>(num_tuples);
     test_hybrid_orchestrator<Tt>(num_tuples);
     test_radix_selectiv_orchestrator<Tt>(num_tuples);

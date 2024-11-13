@@ -12,7 +12,7 @@ template<typename T>
 class ManagedSlottedPage {
     size_t page_size;
     std::shared_ptr<uint8_t[]> page_data;
-    HeaderInfo *header;
+    HeaderInfoNonAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
     size_t max_tuples;
@@ -26,8 +26,8 @@ public:
         page_data = std::make_shared<uint8_t[]>(page_size);
 
         // Set up header, slots, and data pointers within the page_data
-        header = reinterpret_cast<HeaderInfo *>(page_data.get());
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo));
+        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data.get());
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic));
         data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * sizeof(T));
 
         // Initialize header values
@@ -46,7 +46,7 @@ public:
             std::memcpy(tuple_start, &tuple, T::get_size_of_variable_data());
         }
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo) + current_index * sizeof(SlotInfo<T>));
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic) + current_index * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
 
         // Increase tuple count
@@ -55,7 +55,7 @@ public:
     }
 
     static size_t get_max_tuples(const size_t page_size) {
-        return (page_size - sizeof(HeaderInfo)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
+        return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 
     std::optional<T> get_tuple(const typename T::KeyType &key) const {

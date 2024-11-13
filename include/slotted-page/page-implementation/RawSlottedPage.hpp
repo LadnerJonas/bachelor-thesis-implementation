@@ -13,7 +13,7 @@ template<typename T>
 class RawSlottedPage {
     size_t page_size;
     std::shared_ptr<uint8_t[]> page_data;
-    HeaderInfo *header;
+    HeaderInfoAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
     size_t max_tuples;
@@ -24,9 +24,9 @@ public:
         page_data = std::make_shared<uint8_t[]>(page_size);
 
         max_tuples = get_max_tuples(page_size);
-        header = reinterpret_cast<HeaderInfo *>(page_data.get());
+        header = reinterpret_cast<HeaderInfoAtomic *>(page_data.get());
         header->tuple_count = 0;
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfo));
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic));
         data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * T::get_size_of_variable_data());
     }
 
@@ -46,17 +46,17 @@ public:
         }
 
         //store slot
-        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfo) + entry_num * sizeof(SlotInfo<T>));
+        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoAtomic) + entry_num * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
     }
 
     static void increase_tuple_count(uint8_t *page_data, const size_t tuple_count) {
-        const auto header = reinterpret_cast<HeaderInfo *>(page_data);
+        const auto header = reinterpret_cast<HeaderInfoAtomic *>(page_data);
         header->tuple_count += tuple_count;
     }
 
     static size_t get_max_tuples(size_t page_size) {
-        return (page_size - sizeof(HeaderInfo)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
+        return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 
     std::optional<T> get_tuple(const typename T::KeyType &key) const {
