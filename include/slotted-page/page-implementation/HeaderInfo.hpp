@@ -1,6 +1,10 @@
 #pragma once
 #include <atomic>
 
-struct HeaderInfo {
+struct HeaderInfoAtomic {
     std::atomic<unsigned> tuple_count;
+};
+
+struct HeaderInfoNonAtomic {
+    unsigned tuple_count;
 };
