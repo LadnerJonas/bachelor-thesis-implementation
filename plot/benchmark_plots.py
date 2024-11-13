@@ -37,6 +37,7 @@ def load_data(file_path):
                 if len(row) > len(columns) - 1:
                     row = row[:6] + row[7:]
                 row.append("Tuple" + row[1] + "-" + row[4])
+                row[3] = row[3].replace("GB", "")
                 data.append(row)
 
     df = pd.DataFrame(data, columns=columns)
@@ -139,7 +140,7 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
 
         # Configure subplot
         ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
-        ax.set_title(f"Combined - {grouping_column} {group_value}", fontsize=14)
+        ax.set_title(f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)", fontsize=14)
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
         ax.set_xlabel("Threads", fontsize=12)
         ax.legend(fontsize=10)
