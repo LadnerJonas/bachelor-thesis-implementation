@@ -28,7 +28,7 @@ public:
         }
 
         if (registered_threads_.fetch_add(1) + 1 == num_threads_) {
-            std::unique_lock lock(thread_notify_mutex_);
+            std::lock_guard lock(thread_notify_mutex_);
 
             std::for_each(std::execution::par_unseq,
                           std::begin(histogram_),
@@ -45,7 +45,7 @@ public:
     std::vector<std::pair<T *, size_t>> request_thread_storage_locations(
             const std::array<size_t, num_partitions_> &histogram) {
         {
-            std::unique_lock lock(thread_notify_mutex_);
+            std::lock_guard lock(thread_notify_mutex_);
             thread_notify_cv_.wait(lock, [this] { return registered_threads_.load() == num_threads_; });
         }
         std::vector<std::pair<T *, size_t>> storage_locations(num_partitions_);

@@ -13,7 +13,7 @@ public:
     }
 
     auto getBatchOfTuples() -> std::pair<std::unique_ptr<T[]>, size_t> {
-        std::unique_lock lock(mutex);
+        std::lock_guard lock(mutex);
         return generator.getBatchOfTuples();
     }
 };

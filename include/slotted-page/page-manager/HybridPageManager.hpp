@@ -40,7 +40,7 @@ public:
     }
 
     std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
-        std::unique_lock lock(global_histogram_mutex);
+        std::lock_guard lock(global_histogram_mutex);
         std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
 
         for (size_t partition = 0; partition < partitions; ++partition) {
@@ -78,7 +78,7 @@ public:
         auto process_partition = [&](size_t partition) {
             size_t tuples_to_write = local_histogram[partition];
             while (tuples_to_write > 0) {
-                std::unique_lock lock(partition_mutexes[partition]);
+                std::lock_guard lock(partition_mutexes[partition]);
                 const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
                 assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
                 const size_t free_space = tuples_per_page - current_tuple_offset;

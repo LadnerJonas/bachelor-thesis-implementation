@@ -17,7 +17,7 @@ public:
     }
 
     void insert_tuple(const T &tuple, size_t partition) {
-        std::unique_lock lock(partition_locks[partition].mutex);
+        std::lock_guard lock(partition_locks[partition].mutex);
         if (!pages[partition].back().add_tuple(tuple)) {
             pages[partition].emplace_back(page_size);
             pages[partition].back().add_tuple(tuple);
@@ -25,7 +25,7 @@ public:
     }
 
     void insert_buffer_of_tuples(const T *buffer, const size_t num_tuples, const size_t partition) {
-        std::unique_lock lock(partition_locks[partition].mutex);
+        std::lock_guard lock(partition_locks[partition].mutex);
         for (unsigned i = 0; i < num_tuples; i++) {
             if (!pages[partition].back().add_tuple(buffer[i])) {
                 pages[partition].emplace_back(page_size);

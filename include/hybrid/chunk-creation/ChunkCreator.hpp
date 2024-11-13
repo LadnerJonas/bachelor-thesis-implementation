@@ -16,7 +16,7 @@ public:
     }
 
     auto getChunkOfTuples(size_t max_tuple_count_in_chunk) -> std::pair<std::unique_ptr<T[]>, size_t> {
-        std::unique_lock lock(mutex);
+        std::lock_guard lock(mutex);
         const size_t tuples_left = tuples_to_generate - generated_tuples;
         const size_t tuples_to_generate_now = std::min(max_tuple_count_in_chunk, tuples_left);
 
