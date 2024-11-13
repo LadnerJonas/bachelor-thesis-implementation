@@ -3,7 +3,7 @@
 #include "slotted-page/page-manager/OnDemandPageManager.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T, partitions, page_size> &page_manager) {
+void process_morsel_smb_batched(MorselCreator<T> &morsel_creator, OnDemandPageManager<T, partitions, page_size> &page_manager) {
     std::array<unsigned, partitions> buffer_index = {};
     const auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
     const auto buffer_size_per_partition = total_buffer_size / partitions;
@@ -17,7 +17,7 @@ void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T,
             auto partition_offset = partition * buffer_size_per_partition;
 
             if (index == buffer_size_per_partition) {
-                page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_size_per_partition, partition);
+                page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);
                 index = 0;
             }
 
@@ -29,7 +29,7 @@ void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T,
     for (unsigned i = 0; i < partitions; ++i) {
         auto partition_offset = i * buffer_size_per_partition;
         if (buffer_index[i] > 0) {
-            page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_index[i], i);
+            page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_index[i], i);
         }
     }
 }

@@ -11,7 +11,7 @@
 template<typename T>
 class ManagedSlottedPage {
     size_t page_size;
-    uint8_t * page_data;
+    uint8_t *page_data;
     HeaderInfoNonAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
@@ -85,6 +85,25 @@ public:
         // Increase tuple count
         header->tuple_count += 1;
         return true;
+    }
+
+    void add_tuple_batch_with_index(const T *buffer, const unsigned index, const unsigned tuples_to_write) {
+        size_t first_tuple_offset_from_end = 0;
+        if (T::get_size_of_variable_data() > 0) {
+            first_tuple_offset_from_end = page_size - (index + 1) * T::get_size_of_variable_data();
+            for (unsigned i = 0; i < tuples_to_write; i++) {
+                auto tuple_start = page_data + first_tuple_offset_from_end - i * T::get_size_of_variable_data();
+                std::memcpy(tuple_start, &buffer[i], T::get_size_of_variable_data());
+            }
+        }
+        for (unsigned i = 0; i < tuples_to_write; i++) {
+            auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + (index + i) * sizeof(SlotInfo<T>));
+            new (slot_start) SlotInfo<T>(first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key());
+        }
+    }
+
+    void increase_tuple_count(const unsigned count) const {
+        header->tuple_count += count;
     }
 
     static size_t get_max_tuples(const size_t page_size) {
