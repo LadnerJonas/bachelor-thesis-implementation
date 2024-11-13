@@ -149,9 +149,9 @@ auto main() -> int {
     auto pages_size = static_cast<double>(num_pages) * PAGE_SIZE;
     auto pages_size_gb = pages_size / 1024 / 1024 / 1024;
 
-    auto storage_overhead = static_cast<double>(num_tuples * sizeof(SlotInfo<Tt>));
+    auto storage_overhead = static_cast<double>(num_tuples * (sizeof(SlotInfo<Tt>) - sizeof(Tt::KeyType)));
     auto storage_overhead_gb = storage_overhead / 1024 / 1024 / 1024;
-    auto total_storage_gb = std::is_same_v<Tt, Tuple4> ? storage_overhead_gb : net_needed_storage_gb + storage_overhead_gb;
+    auto total_storage_gb = net_needed_storage_gb + storage_overhead_gb;
     auto load_factor = total_storage_gb / pages_size_gb;
 
     std::cout << "Needed Storage: " << total_storage_gb << "GB (" << net_needed_storage_gb << "GB (net) + " << storage_overhead_gb << "GB (overhead), " << 100 * net_needed_storage_gb / total_storage_gb << "% + " << 100 * storage_overhead_gb / total_storage_gb << "%)" << std::endl;
