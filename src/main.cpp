@@ -9,6 +9,7 @@
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
 #include "smb/orchestration/SmbBatchedOrchestrator.hpp"
 #include "smb/orchestration/SmbOrchestrator.hpp"
+#include "smb/orchestration/SmbSingleThreadOrchestrator.hpp"
 #include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr size_t PAGE_SIZE = 5 * 1024 * 1024;
@@ -108,9 +109,31 @@ void test_smb_orchestrator(size_t num_tuples) {
     }
     std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
 }
+
+template<typename Tt>
+void test_smb_single_thread_orchestrator(size_t num_tuples) {
+    std::cout << "Running single_threaded smb orchestrator" << std::endl;
+    auto time_start = std::chrono::high_resolution_clock::now();
+    SmbSingleThreadOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples);
+    orchestrator.run();
+
+    auto written_tuples_per_partition = orchestrator.get_written_tuples_per_partition();
+    auto actual_tuples = 0u;
+    for (auto tuples: written_tuples_per_partition) {
+        actual_tuples += tuples;
+    }
+
+    if (num_tuples == actual_tuples) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed: " << actual_tuples << "/" << num_tuples << std::endl;
+        exit(1);
+    }
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
+}
 template<typename Tt>
 void test_smb_batched_orchestrator(size_t num_tuples) {
-    std::cout << "Running smart smb orchestrator" << std::endl;
+    std::cout << "Running batched smb orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
     SmbBatchedOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
     orchestrator.run();
@@ -203,11 +226,12 @@ auto main() -> int {
     std::cout << "Needed Storage: " << total_storage_gb << "GB (" << net_needed_storage_gb << "GB (net) + " << storage_overhead_gb << "GB (overhead), " << 100 * net_needed_storage_gb / total_storage_gb << "% + " << 100 * storage_overhead_gb / total_storage_gb << "%)" << std::endl;
     std::cout << "Expecting " << num_pages << " pages (" << pages_size_gb << "GB of pages, " << num_pages / PARTITIONS << " pages per partition, " << 100 * load_factor << "% page load factor)" << std::endl;
 
-    test_radix_orchestrator<Tt>(num_tuples);
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
+    test_ondemand_orchestrator<Tt>(num_tuples);
+    test_smb_single_thread_orchestrator<Tt>(num_tuples);
     test_smb_orchestrator<Tt>(num_tuples);
     test_smb_batched_orchestrator<Tt>(num_tuples);
-    test_ondemand_orchestrator<Tt>(num_tuples);
+    test_radix_orchestrator<Tt>(num_tuples);
     test_hybrid_orchestrator<Tt>(num_tuples);
     test_radix_selectiv_orchestrator<Tt>(num_tuples);
 

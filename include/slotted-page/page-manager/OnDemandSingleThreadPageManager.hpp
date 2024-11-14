@@ -19,6 +19,15 @@ public:
             pages[partition].back().add_tuple(tuple);
         }
     }
+    void insert_buffer_of_tuples(const T *buffer, const size_t num_tuples, const size_t partition) {
+        for (unsigned i = 0; i < num_tuples; i++) {
+            const auto &tuple = buffer[i];
+            if (!pages[partition].back().add_tuple(tuple)) {
+                pages[partition].emplace_back(page_size);
+                pages[partition].back().add_tuple(tuple);
+            }
+        }
+    }
 
     std::vector<size_t> get_written_tuples_per_partition() {
         std::vector<size_t> result(partitions, 0);
