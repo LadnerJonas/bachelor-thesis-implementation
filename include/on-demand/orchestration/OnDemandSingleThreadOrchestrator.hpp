@@ -13,8 +13,7 @@ public:
     }
 
     void run() {
-        for (auto [batch, batch_size] = generator.getBatchOfTuples(); batch;
-             std::tie(batch, batch_size) = generator.getBatchOfTuples()) {
+        for (auto [batch, batch_size] = generator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = generator.getBatchOfTuples()) {
             for (size_t i = 0; i < batch_size; ++i) {
                 page_manager.insert_tuple(batch[i], partition_function<T, partitions>(batch[i]));
             }

@@ -4,17 +4,17 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T, partitions, page_size> &page_manager) {
+    constexpr static auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
+    constexpr static auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};
-    const auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
-    const auto buffer_size_per_partition = total_buffer_size / partitions;
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
 
     for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
         for (size_t i = 0; i < batch_size; ++i) {
-            auto tuple = batch[i];
-            auto partition = partition_function<T, partitions>(tuple);
+            const auto &tuple = batch[i];
+            const auto partition = partition_function<T, partitions>(tuple);
             auto &index = buffer_index[partition];
-            auto partition_offset = partition * buffer_size_per_partition;
+            const auto partition_offset = partition * buffer_size_per_partition;
 
             if (index == buffer_size_per_partition) {
                 page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_size_per_partition, partition);

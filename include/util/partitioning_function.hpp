@@ -1,9 +1,9 @@
 #pragma once
 
 template<typename T, size_t num_partitions>
-size_t partition_function(T &entry) {
-    constexpr size_t mask = num_partitions - 1;
-    constexpr bool is_power_of_2 = (num_partitions & mask) == 0;
+size_t partition_function(const T &entry) {
+    constexpr static size_t mask = num_partitions - 1;
+    constexpr static bool is_power_of_2 = (num_partitions & mask) == 0;
     if (is_power_of_2) {
         return entry.get_key() & mask;
     }

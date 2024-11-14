@@ -38,7 +38,7 @@ public:
     void insert_buffer_of_tuples(const T *buffer, const size_t num_tuples, const size_t partition) {
         std::lock_guard lock(partition_locks[partition].mutex);
         for (unsigned i = 0; i < num_tuples; i++) {
-            const auto tuple = buffer[i];
+            const auto &tuple = buffer[i];
             if (!pages[partition].back().add_tuple(tuple)) {
                 pages[partition].emplace_back(page_size);
                 pages[partition].back().add_tuple(tuple);

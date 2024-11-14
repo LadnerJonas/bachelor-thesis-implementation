@@ -32,10 +32,9 @@ public:
 
     uint8_t *get_page_data() const {
         return page_data.get();
-        ;
     }
 
-    static void write_tuple(uint8_t *page_data, const size_t page_size, T &tuple, unsigned entry_num) {
+    static void write_tuple(uint8_t *page_data, const size_t page_size, T &tuple, const unsigned entry_num) {
         size_t tuple_offset_from_end = 0;
         if (T::get_size_of_variable_data() > 0) {
             //store tuple starting from the end of the page_data
