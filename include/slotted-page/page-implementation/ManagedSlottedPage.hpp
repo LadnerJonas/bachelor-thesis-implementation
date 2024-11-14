@@ -16,7 +16,6 @@ class ManagedSlottedPage {
     SlotInfo<T> *slots;
     T *data_section;
     size_t max_tuples;
-    size_t current_index = 0;
     bool has_to_be_freed = true;
 
 public:
@@ -49,7 +48,6 @@ public:
     }
 
     ~ManagedSlottedPage() {
-        // std::cout << "ManagedSlottedPage destructor" << std::endl;
         if (has_to_be_freed) {
             delete[] page_data;
         }
@@ -57,7 +55,7 @@ public:
 
     // move constructor
     ManagedSlottedPage(ManagedSlottedPage &&other) noexcept
-        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), max_tuples(other.max_tuples), current_index(other.current_index), has_to_be_freed(other.has_to_be_freed) {
+        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), max_tuples(other.max_tuples), has_to_be_freed(other.has_to_be_freed) {
         other.page_data = nullptr;
         other.header = nullptr;
         other.slots = nullptr;
@@ -74,12 +72,12 @@ public:
         size_t tuple_offset_from_end = 0;
         if (T::get_size_of_variable_data() > 0) {
             //store tuple starting from the end of the page_data
-            tuple_offset_from_end = page_size - (current_index + 1) * T::get_size_of_variable_data();
+            tuple_offset_from_end = page_size - (header->tuple_count + 1) * T::get_size_of_variable_data();
             auto tuple_start = page_data + tuple_offset_from_end;
             std::memcpy(tuple_start, &tuple, T::get_size_of_variable_data());
         }
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + current_index * sizeof(SlotInfo<T>));
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + header->tuple_count * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
 
         // Increase tuple count
