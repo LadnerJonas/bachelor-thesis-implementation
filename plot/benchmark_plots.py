@@ -107,7 +107,7 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
 
         min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
         if with_baseline:
-            tuple_generation_time_map = [[1.18,0.39], [2.23,0.78], [3.68,1.19]]
+            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [3.71,1.56]]
             # Add a horizontal line for tuple generation time
             main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
             sub_index = 0 if "server" in path else 1
