@@ -207,6 +207,9 @@ auto main() -> int {
     test_ondemand_single_thread_orchestrator<Tt>(num_tuples);
     test_smb_orchestrator<Tt>(num_tuples);
     test_smb_batched_orchestrator<Tt>(num_tuples);
+    test_ondemand_orchestrator<Tt>(num_tuples);
+    test_hybrid_orchestrator<Tt>(num_tuples);
+    test_radix_selectiv_orchestrator<Tt>(num_tuples);
 
     // auto time_start = std::chrono::high_resolution_clock::now();
     // ContinuousMaterialization<Tt> materialization(num_tuples);
