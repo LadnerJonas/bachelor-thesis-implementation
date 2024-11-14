@@ -81,12 +81,12 @@ def plot_individual_data(df, output_dir, source, output_prefix, grouping_column=
 
 
 def plot_combined_data(df, path, grouping_column="tuple_size-Partitions"):
-    generate_combined_images(df, path, grouping_column, "Time", "time_sec", "sec", True)
-    generate_combined_images(df, path, grouping_column, "Instructions", "instructions", "1 Mio", with_y_log_scale=True)
-    generate_combined_images(df, path, grouping_column, "L1_misses", "L1_misses", "1 Mio", with_y_log_scale=True)
-    generate_combined_images(df, path, grouping_column, "LLC_misses", "LLC_misses", "1 Mio", with_y_log_scale=True)
-    generate_combined_images(df, path, grouping_column, "Branch_misses", "branch_misses", "1 Mio", with_y_log_scale=True)
-    generate_combined_images(df, path, grouping_column, "IPC", "IPC", "", with_y_log_scale=False)
+    generate_combined_images(df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=True)
+    generate_combined_images(df, path, grouping_column, "Instructions", "instructions", "1 Mio")
+    generate_combined_images(df, path, grouping_column, "L1_misses", "L1_misses", "1 Mio")
+    generate_combined_images(df, path, grouping_column, "LLC_misses", "LLC_misses", "1 Mio")
+    generate_combined_images(df, path, grouping_column, "Branch_misses", "branch_misses", "1 Mio")
+    generate_combined_images(df, path, grouping_column, "IPC", "IPC", "")
 
 
 def generate_combined_images(df, path, grouping_column, y_label, y_column, y_unit, with_baseline=False, with_y_log_scale = False):
