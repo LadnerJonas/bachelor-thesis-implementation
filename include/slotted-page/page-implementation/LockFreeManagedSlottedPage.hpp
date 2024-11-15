@@ -17,7 +17,6 @@ class LockFreeManagedSlottedPage {
     T *data_section;
     size_t max_tuples;
     bool has_to_be_freed = true;
-    std::atomic<bool> first_time_full = true;
     struct WriteInfo {
         uint8_t *page_data;
         unsigned tuple_index;
@@ -64,7 +63,6 @@ public:
         other.slots = nullptr;
         other.data_section = nullptr;
         other.has_to_be_freed = false;
-        other.first_time_full.store(false);
     }
     //copy constructor delete
     LockFreeManagedSlottedPage(const LockFreeManagedSlottedPage &other) = delete;
@@ -72,8 +70,7 @@ public:
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {
         const auto tuple_count = header->tuple_count.fetch_add(1);
         if(tuple_count >= max_tuples) {
-            header->tuple_count.store(max_tuples);
-            if (auto exp = true; first_time_full.compare_exchange_strong(exp, false)) {
+            if (tuple_count == max_tuples) {
                 return {nullptr, max_tuples, 0};
             }
             return {nullptr, 0, 0};
@@ -140,6 +137,6 @@ public:
     }
 
     [[nodiscard]] size_t get_tuple_count() const {
-        return header->tuple_count;
+        return std::min(static_cast<size_t>(header->tuple_count.load()), max_tuples);
     }
 };
