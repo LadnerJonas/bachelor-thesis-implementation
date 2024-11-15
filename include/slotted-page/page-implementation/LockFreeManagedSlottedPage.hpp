@@ -19,8 +19,14 @@ class LockFreeManagedSlottedPage {
     bool has_to_be_freed = true;
     struct WriteInfo {
         uint8_t *page_data;
-        unsigned tuple_index;
         unsigned page_size;
+        unsigned tuple_index;
+    };
+    struct BatchedWriteInfo {
+        uint8_t *page_data;
+        unsigned page_size;
+        unsigned tuple_index;
+        unsigned tuples_to_write;
     };
 public:
     explicit LockFreeManagedSlottedPage(size_t page_size)
@@ -71,11 +77,11 @@ public:
         const auto tuple_count = header->tuple_count.fetch_add(1);
         if(tuple_count >= max_tuples) {
             if (tuple_count == max_tuples) {
-                return {nullptr, max_tuples, 0};
+                return {nullptr, 0, max_tuples};
             }
             return {nullptr, 0, 0};
         }
-        return {page_data, tuple_count, page_size};
+        return {page_data, page_size, tuple_count};
     }
 
     static void add_tuple_using_index(WriteInfo wi, const T &tuple) {
@@ -90,8 +96,23 @@ public:
         auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic) + wi.tuple_index * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
     }
+    static void add_batch_using_index(const T* buffer, BatchedWriteInfo wi) {
+        size_t first_tuple_offset_from_end = 0;
+        if (T::get_size_of_variable_data() > 0) {
+            first_tuple_offset_from_end = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
+            //store tuple starting from the end of the page_data
+            for(unsigned i = 0; i < wi.tuples_to_write; ++i) {
+                auto tuple_start = wi.page_data + wi.page_size - (wi.tuple_index + i + 1) * T::get_size_of_variable_data();;
+                std::memcpy(tuple_start, &buffer[i], T::get_size_of_variable_data());
+            }
+        }
+        //store slot
+        for (unsigned i = 0; i < wi.tuples_to_write; i++) {
+            auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic) + (wi.tuple_index + i) * sizeof(SlotInfo<T>));
+            new (slot_start) SlotInfo<T>(first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key());
+        }
 
-
+    }
 
     static size_t get_max_tuples(const size_t page_size) {
         return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
@@ -105,6 +126,21 @@ public:
             }
         }
         return std::nullopt;
+    }
+
+    [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(unsigned max_tuples_to_write) {
+        const auto tuple_count = header->tuple_count.fetch_add(max_tuples_to_write);
+        if(tuple_count >= this->max_tuples) {
+            if (tuple_count == this->max_tuples) {
+                return {nullptr, static_cast<unsigned>(page_size), static_cast<unsigned>(this->max_tuples), 0};
+            }
+            return {nullptr, 0, 0, 0};
+        }
+        const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(this->max_tuples - tuple_count));
+        if(tuples_to_write < max_tuples_to_write) {
+            header->tuple_count.store(this->max_tuples);
+        }
+        return {page_data, static_cast<unsigned>(page_size), tuple_count, tuples_to_write};
     }
 
     // void add_tuple_batch_with_index(const T *buffer, const unsigned index, const unsigned tuples_to_write) {
