@@ -29,5 +29,8 @@ struct alignas(std::hardware_destructive_interference_size) PaddedAtomic {
     T get() {
         return value.load();
     }
+    T operator++() {
+        return value++;
+    }
 };
 #endif// PADDEDATOMIC_HPP
