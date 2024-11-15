@@ -9,7 +9,6 @@ template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class OnDemandPageManager {
     std::array<PaddedMutex, partitions> partition_locks;
     std::array<std::vector<ManagedSlottedPage<T>>, partitions> pages;
-    SlottedPagePool<T, partitions, page_size> pool;
 
 public:
     OnDemandPageManager() {
@@ -17,12 +16,12 @@ public:
             pages[i].emplace_back(page_size);
         }
     }
-    explicit OnDemandPageManager(size_t tuples) : pool(tuples) {
+    explicit OnDemandPageManager(size_t tuples) {
         const auto max_tuples_per_page = ManagedSlottedPage<T>::get_max_tuples(page_size);
         const auto pages_to_reserve_per_partition = ((tuples + partitions - 1) / partitions + max_tuples_per_page - 1) / max_tuples_per_page;
         for (size_t i = 0; i < partitions; ++i) {
             pages[i].reserve(pages_to_reserve_per_partition);
-            pages[i].emplace_back(page_size, pool.get_single_page());
+            pages[i].emplace_back(page_size);
         }
     }
 
@@ -52,7 +51,7 @@ public:
         const auto index = current_page.get_tuple_count();
         auto tuples_left_on_page = ManagedSlottedPage<T>::get_max_tuples(page_size) - index;
         if (tuples_left_on_page == 0) {
-            pages[partition].emplace_back(page_size, pool.get_single_page());
+            pages[partition].emplace_back(page_size);
             lock.unlock();
             insert_buffer_of_tuples_batched(buffer, num_tuples, partition);
             return;
