@@ -4,7 +4,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel_smb(MorselCreator<T> &morsel_creator, OnDemandPageManager<T, partitions, page_size> &page_manager) {
-    constexpr static auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
+    constexpr static auto total_buffer_size = 16 * 1024 * 1024 / sizeof(T);
     constexpr static auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
