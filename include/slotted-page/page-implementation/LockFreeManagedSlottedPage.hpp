@@ -78,11 +78,11 @@ public:
         const auto tuple_count = header->tuple_count.fetch_add(1);
         if (tuple_count >= max_tuples) {
             if (tuple_count == max_tuples) {
-                return {nullptr, 0, max_tuples};
+                return {nullptr, 0, static_cast<unsigned>(max_tuples)};
             }
             return {nullptr, 0, 0};
         }
-        return {page_data, page_size, tuple_count};
+        return {page_data, static_cast<unsigned>(page_size), tuple_count};
     }
 
     static void add_tuple_using_index(WriteInfo wi, const T &tuple) {
@@ -91,39 +91,11 @@ public:
             //store tuple starting from the end of the page_data
             tuple_offset_from_end = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
             auto tuple_start = wi.page_data + tuple_offset_from_end;
-            std::memcpy(tuple_start, &tuple, T::get_size_of_variable_data());
+            std::memcpy(tuple_start, &tuple.get_variable_data(), T::get_size_of_variable_data());
         }
         //store slot
         auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic) + wi.tuple_index * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
-    }
-    static void add_batch_using_index(const T *buffer, BatchedWriteInfo wi) {
-        SlotInfo<T> slot_buffer[wi.tuples_to_write];
-        size_t tuple_offset = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
-        for (unsigned i = 0; i < wi.tuples_to_write; ++i) {
-            if (T::get_size_of_variable_data() > 0) {
-                std::memcpy(wi.page_data + tuple_offset, &buffer[i], T::get_size_of_variable_data());
-            }
-
-            slot_buffer[i] = SlotInfo<T>(tuple_offset, T::get_size_of_variable_data(), buffer[i].get_key());
-            tuple_offset -= T::get_size_of_variable_data();
-        }
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic));
-        std::memcpy(slot_start + wi.tuple_index, slot_buffer, wi.tuples_to_write * sizeof(SlotInfo<T>));
-    }
-
-    static size_t get_max_tuples(const size_t page_size) {
-        return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
-    }
-
-    std::optional<T> get_tuple(const typename T::KeyType &key) const {
-        for (size_t i = 0; i < header->tuple_count; ++i) {
-            if (slots[i].key == key) {
-                T tuple(key, data_section[i].get_variable_data());
-                return tuple;
-            }
-        }
-        return std::nullopt;
     }
 
     [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(unsigned max_tuples_to_write) {
@@ -141,26 +113,50 @@ public:
         return {page_data, static_cast<unsigned>(page_size), tuple_count, tuples_to_write};
     }
 
-    // void add_tuple_batch_with_index(const T *buffer, const unsigned index, const unsigned tuples_to_write) {
-    //     size_t first_tuple_offset_from_end = 0;
-    //     if (T::get_size_of_variable_data() > 0) {
-    //         first_tuple_offset_from_end = page_size - (index + 1) * T::get_size_of_variable_data();
-    //         for (unsigned i = 0; i < tuples_to_write; i++) {
-    //             auto tuple_start = page_data + first_tuple_offset_from_end - i * T::get_size_of_variable_data();
-    //             std::memcpy(tuple_start, &buffer[i], T::get_size_of_variable_data());
-    //         }
-    //     }
-    //     for (unsigned i = 0; i < tuples_to_write; i++) {
-    //         auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoAtomic) + (index + i) * sizeof(SlotInfo<T>));
-    //         new (slot_start) SlotInfo<T>(first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key());
-    //     }
-    // }
+    static void add_batch_using_index(const T *buffer, BatchedWriteInfo wi) {
+        SlotInfo<T> slot_buffer[wi.tuples_to_write];
+        size_t tuple_offset = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
+        for (unsigned i = 0; i < wi.tuples_to_write; ++i) {
+            if (T::get_size_of_variable_data() > 0) {
+                std::memcpy(wi.page_data + tuple_offset, &buffer[i].get_variable_data(), T::get_size_of_variable_data());
+            }
+
+            slot_buffer[i] = SlotInfo<T>(tuple_offset, T::get_size_of_variable_data(), buffer[i].get_key());
+            tuple_offset -= T::get_size_of_variable_data();
+        }
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic));
+        std::memcpy(slot_start + wi.tuple_index, slot_buffer, wi.tuples_to_write * sizeof(SlotInfo<T>));
+    }
+
+    static size_t get_max_tuples(const size_t page_size) {
+        return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
+    }
+
+    std::optional<T> get_tuple(const typename T::KeyType &key) const {
+        for (size_t i = 0; i < get_tuple_count(); ++i) {
+            if (slots[i].key == key) {
+                if (T::get_size_of_variable_data() > 0) {
+                    auto offset_from_page_start = slots[i].offset;
+                    std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
+                    std::memcpy(tuple_data.data(), page_data + offset_from_page_start, T::get_size_of_variable_data());
+                    T tuple(key, tuple_data);
+                    return tuple;
+                }
+                T tuple(slots[i].key);
+                return tuple;
+            }
+        }
+        return std::nullopt;
+    }
 
     std::vector<T> get_all_tuples() const {
         std::vector<T> all_tuples;
-        for (size_t i = 0; i < header->tuple_count; ++i) {
+        for (size_t i = 0; i < get_tuple_count(); ++i) {
             if (T::get_size_of_variable_data() > 0) {
-                T tuple(slots[i].key, data_section[i].get_variable_data());
+                auto offset_from_page_start = slots[i].offset;
+                std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
+                std::memcpy(tuple_data.data(), page_data + offset_from_page_start, T::get_size_of_variable_data());
+                T tuple(slots[i].key, tuple_data);
                 all_tuples.emplace_back(tuple);
             } else {
                 T tuple(slots[i].key);

@@ -4,6 +4,7 @@ find_package(GTest REQUIRED)
 include_directories(../include)
 
 add_executable(tests test_main.cpp
+        slotted-page/page-implementation/test_LockFreeManagedSlottedPage.cpp
         slotted-page/page-implementation/test_ManagedSlottedPage.cpp
         slotted-page/page-implementation/test_RawSlottedPage.cpp)
 target_link_libraries(tests PRIVATE GTest::gtest GTest::gtest_main)
