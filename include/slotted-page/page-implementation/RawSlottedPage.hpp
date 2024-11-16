@@ -61,7 +61,14 @@ public:
     std::optional<T> get_tuple(const typename T::KeyType &key) const {
         for (size_t i = 0; i < header->tuple_count; ++i) {
             if (slots[i].key == key) {
-                T tuple(key, data_section[i].get_variable_data());
+                if (T::get_size_of_variable_data() > 0) {
+                    auto offset_from_page_start = slots[i].offset;
+                    std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
+                    std::memcpy(tuple_data.data(), page_data.get() + offset_from_page_start, T::get_size_of_variable_data());
+                    T tuple(key, tuple_data);
+                    return tuple;
+                }
+                T tuple(slots[i].key);
                 return tuple;
             }
         }
@@ -72,7 +79,10 @@ public:
         std::vector<T> all_tuples;
         for (size_t i = 0; i < header->tuple_count; ++i) {
             if (T::get_size_of_variable_data() > 0) {
-                T tuple(slots[i].key, data_section[i].get_variable_data());
+                auto offset_from_page_start = slots[i].offset;
+                std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
+                std::memcpy(tuple_data.data(), page_data.get() + offset_from_page_start, T::get_size_of_variable_data());
+                T tuple(slots[i].key, tuple_data);
                 all_tuples.emplace_back(tuple);
             } else {
                 T tuple(slots[i].key);
