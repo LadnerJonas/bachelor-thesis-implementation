@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20.4)
 project(implementation)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fno-inline -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
