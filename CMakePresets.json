@@ -1,0 +1,77 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 4
+  },
+  "configurePresets": [
+    {
+      "name": "release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O3 -march=native -DNDEBUG"
+      }
+    },
+    {
+      "name": "debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-g -fno-omit-frame-pointer -fno-inline -fsanitize=thread,undefined -D_GLIBCXX_DEBUG"
+      }
+    },
+    {
+      "name": "profile",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/profile",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Profile",
+        "CMAKE_CXX_FLAGS": "-O3 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline"
+      }
+    },
+    {
+      "name": "pgo-instrument",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/pgo-instrument",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O3 -march=native -fprofile-generate=${sourceDir}/profile_data -DNDEBUG"
+      }
+    },
+    {
+      "name": "pgo-optimize",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/pgo-optimize",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O3 -march=native -fprofile-use=${sourceDir}/profile_data -fprofile-correction -DNDEBUG"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release-build",
+      "configurePreset": "release"
+    },
+    {
+      "name": "debug-build",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "profile-build",
+      "configurePreset": "profile"
+    },
+    {
+      "name": "pgo-instrument-build",
+      "configurePreset": "pgo-instrument"
+    },
+    {
+      "name": "pgo-optimize-build",
+      "configurePreset": "pgo-optimize"
+    }
+  ]
+}
