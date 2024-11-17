@@ -3,6 +3,7 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "slotted-page/page-implementation/HeaderInfo.hpp"
@@ -53,15 +54,15 @@ public:
         }
     }
 
-    // move constructor
     ManagedSlottedPage(ManagedSlottedPage &&other) noexcept
-        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), max_tuples(other.max_tuples), has_to_be_freed(other.has_to_be_freed) {
-        other.page_data = nullptr;
-        other.header = nullptr;
-        other.slots = nullptr;
-        other.data_section = nullptr;
-        other.has_to_be_freed = false;
-    }
+        : page_size(other.page_size),
+          page_data(std::exchange(other.page_data, nullptr)),
+          header(std::exchange(other.header, nullptr)),
+          slots(std::exchange(other.slots, nullptr)),
+          data_section(std::exchange(other.data_section, nullptr)),
+          max_tuples(other.max_tuples),
+          has_to_be_freed(std::exchange(other.has_to_be_freed, false)) {}
+
     //copy constructor delete
     ManagedSlottedPage(const ManagedSlottedPage &other) = delete;
 
