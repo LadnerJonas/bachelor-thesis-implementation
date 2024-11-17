@@ -8,13 +8,13 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-interference-size")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fno-inline -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
-set(CMAKE_CXX_FLAGS_PROFILE "-O2 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline")
+set(CMAKE_CXX_FLAGS_PROFILE "-O3 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline")
 # PGO
 # (Instrumentation phase)
 set(PROFILE_DATA_DIR "${CMAKE_SOURCE_DIR}/profile_data")
-set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O2 -march=native -fprofile-generate=${PROFILE_DATA_DIR} -DNDEBUG")
+set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O3 -march=native -fprofile-generate=${PROFILE_DATA_DIR} -DNDEBUG")
 # (Optimization phase using collected profile data)
-set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O2 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG")
+set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O3 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG")
 
 
 include_directories(include)
