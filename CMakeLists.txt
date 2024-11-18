@@ -16,6 +16,9 @@ set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O3 -march=native -fprofile-generate=${PROFI
 # (Optimization phase using collected profile data)
 set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O3 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG")
 
+#lto
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 
 include_directories(include)
 
