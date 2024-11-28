@@ -49,13 +49,18 @@ void benchmark_RadixOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "RadixOrchestrator               ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                RadixOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    RadixOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -73,14 +78,19 @@ void benchmark_RadixSelectiveOrchestrator(const unsigned tuples_to_generate_base
                 setup_benchmark_params<T>(params, "RadixSelectiveOrchestrator      ", tuples_to_generate, partition, threads);
                 constexpr unsigned k = 32;
                 params.setParam("G-k", k);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -98,14 +108,19 @@ void benchmark_SmbOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "SmbOrchestrator                 ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                SmbOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    SmbOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -122,14 +137,19 @@ void benchmark_SmbLockFreeOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "SmbLockFreeOrchestrator         ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                SmbLockFreeOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    SmbLockFreeOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -146,14 +166,19 @@ void benchmark_SmbLockFreeBatchedOrchestrator(const unsigned tuples_to_generate_
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "SmbLockFreeBatchedOrchestrator  ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                SmbLockFreeBatchedOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    SmbLockFreeBatchedOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -170,14 +195,19 @@ void benchmark_SmbSingleThreadOrchestrator(const unsigned tuples_to_generate_bas
             unsigned threads = 1;
             BenchmarkParameters params;
             setup_benchmark_params<T>(params, "SmbSingleThreadOrchestrator     ", tuples_to_generate, partition, threads);
-            PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+            {
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-            SmbSingleThreadOrchestrator<T, partition> orchestrator(tuples_to_generate);
-            orchestrator.run();
+                SmbSingleThreadOrchestrator<T, partition> orchestrator(tuples_to_generate);
+                orchestrator.run();
 
-            // Verify the result
-            auto written_tuples = orchestrator.get_written_tuples_per_partition();
-            check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                // Verify the result
+                auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+            }
+            if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                threads = 5;
+            }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -194,14 +224,19 @@ void benchmark_SmbBatchedOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "SmbBatchedOrchestrator          ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                SmbBatchedOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    SmbBatchedOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -219,14 +254,19 @@ void benchmark_OnDemandOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "OnDemandOrchestrator            ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                OnDemandOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    OnDemandOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -244,14 +284,19 @@ void benchmark_OnDemandSingleThreadOrchestrator(const unsigned tuples_to_generat
             unsigned threads = 1;
             BenchmarkParameters params;
             setup_benchmark_params<T>(params, "OnDemandSingleThreadOrchestrator", tuples_to_generate, partition, threads);
-            PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+            {
+                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-            OnDemandSingleThreadOrchestrator<T, partition> orchestrator(tuples_to_generate);
-            orchestrator.run();
+                OnDemandSingleThreadOrchestrator<T, partition> orchestrator(tuples_to_generate);
+                orchestrator.run();
 
-            // Verify the result
-            auto written_tuples = orchestrator.get_written_tuples_per_partition();
-            check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                // Verify the result
+                auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+            }
+            if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                threads = 5;
+            }
         };
 
         // Use fold expression to call run_benchmark with each partition value
@@ -267,14 +312,19 @@ void benchmark_HybridOrchestrator(const unsigned tuples_to_generate_base) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "HybridOrchestrator              ", tuples_to_generate, partition, threads);
-                PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                {
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                HybridOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
-                orchestrator.run();
+                    HybridOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
+                    orchestrator.run();
 
-                // Verify the result
-                auto written_tuples = orchestrator.get_written_tuples_per_partition();
-                check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                    // Verify the result
+                    auto written_tuples = orchestrator.get_written_tuples_per_partition();
+                    check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+                }
+                if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
+                    threads = 5;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
         };
@@ -303,7 +353,7 @@ void warmup_run(const unsigned tuples_to_generate_base) {
 
 template<typename T, unsigned... Partitions>
 void run_benchmark_on_all_implementations(const unsigned tuples_to_generate_base) {
-    warmup_run<T>(tuples_to_generate_base/4);
+    warmup_run<T>(tuples_to_generate_base / 4);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME_MS));
     benchmark_OnDemandSingleThreadOrchestrator<T, Partitions...>(tuples_to_generate_base);
