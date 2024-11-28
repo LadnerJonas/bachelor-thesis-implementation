@@ -293,6 +293,12 @@ void warmup_run(const unsigned tuples_to_generate_base) {
     // Verify the result
     auto written_tuples = orchestrator.get_written_tuples_per_partition();
     check_sum_of_written_tuples(tuples_to_generate, written_tuples);
+
+    SmbSingleThreadOrchestrator<T, 1024> orchestrator2(tuples_to_generate);
+    orchestrator2.run();
+
+    auto written_tuples2 = orchestrator2.get_written_tuples_per_partition();
+    check_sum_of_written_tuples(tuples_to_generate, written_tuples2);
 }
 
 template<typename T, unsigned... Partitions>
