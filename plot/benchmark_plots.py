@@ -1,9 +1,23 @@
 import argparse
 import os
+import locale
+locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')  # Set locale to a European format
+
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from adjustText import adjust_text
+
+
+markers = ['o', 's', 'D', '^', 'v', 'p', '*', 'h', 'x', '+', '<', '>', '1', '2', '3', '4', '|', '_', '.']
+colors = [
+    '#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7', '#999999',
+    '#F781BF', '#A65628', '#FF7F00', '#984EA3', '#4DAF4A', '#377EB8', '#E41A1C', '#FFFF33',
+    '#A6CEE3', '#1F78B4', '#B2DF8A', '#33A02C', '#FB9A99', '#E31A1C', '#FDBF6F', '#FFDB5C'
+]
+
+
+
 
 parser = argparse.ArgumentParser(description="Benchmark Analysis")
 parser.add_argument("--source", choices=['laptop', 'server'], required=True,
@@ -81,7 +95,8 @@ def plot_individual_data(df, output_dir, source, output_prefix, grouping_column=
 
 
 def plot_combined_data(df, path, grouping_column="tuple_size-Partitions"):
-    generate_combined_images(df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=True)
+    generate_combined_images_tuples_per_second(df, path, grouping_column, "Tuples_per_Second", "time_sec", "T/sec", with_baseline=False)
+    generate_combined_images_time(df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=False)
     generate_combined_images(df, path, grouping_column, "Instructions", "instructions", "1 Mio")
     generate_combined_images(df, path, grouping_column, "L1_misses", "L1_misses", "1 Mio")
     generate_combined_images(df, path, grouping_column, "LLC_misses", "LLC_misses", "1 Mio")
@@ -89,7 +104,7 @@ def plot_combined_data(df, path, grouping_column="tuple_size-Partitions"):
     generate_combined_images(df, path, grouping_column, "IPC", "IPC", "")
 
 
-def generate_combined_images(df, path, grouping_column, y_label, y_column, y_unit, with_baseline=False, with_y_log_scale = False):
+def generate_combined_images(df, path, grouping_column, y_label, y_column, y_unit):
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
@@ -100,27 +115,12 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
         ax = axs[int(idx / 2)][idx%2]
-        if with_y_log_scale:
-            ax.set_yscale("log")
         df_group = df[df[grouping_column] == group_value]
         annotations = []
 
         min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
-        if with_baseline:
-            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [4.61,1.56]] # non pgo
-            # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
-            # Add a horizontal line for tuple generation time
-            main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
-            sub_index = 0 if "server" in path else 1
-            tuple_generation_time = tuple_generation_time_map[main_index][sub_index]
-            ax.axhline(y=tuple_generation_time, color='purple', linestyle='--', linewidth=1.5,
-                       label=f"Tuple Generation ({tuple_generation_time} {y_unit})")
-            min_y, max_y = min(df_group[y_column].min(), tuple_generation_time), df_group[y_column].max()
-
         y_scale = max_y / min_y
 
-        markers = ['o', 's', 'D', '^', 'v', 'p', '*', 'h', 'x', '+']
-        colors = plt.cm.tab10.colors
         for i, benchmark in enumerate(df["Benchmark"].unique()):
             df_benchmark = df_group[df_group["Benchmark"] == benchmark]
 
@@ -158,6 +158,145 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
     plt.close(fig)
     print(f"Saved combined plot to {output_file}")
 
+def generate_combined_images_time(df, path, grouping_column, y_label, y_column, y_unit, with_baseline=False, with_y_log_scale = False):
+    # Get unique group values for creating subplots
+    unique_group_values = df[grouping_column].unique()
+    num_groups = len(unique_group_values)
+    # Create a figure with multiple subplots (one per group value)
+    fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
+    if num_groups == 1:
+        axs = [axs]  # Handle case when there's only one subplot
+    # Loop over each group (group_value)
+    for idx, group_value in enumerate(unique_group_values):
+        ax = axs[int(idx / 2)][idx%2]
+        if with_y_log_scale:
+            ax.set_yscale("log")
+        df_group = df[df[grouping_column] == group_value]
+        annotations = []
+
+        min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
+        if with_baseline:
+            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [4.61,1.56]] # non pgo
+            # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
+            # Add a horizontal line for tuple generation time
+            main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
+            sub_index = 0 if "server" in path else 1
+            tuple_generation_time = tuple_generation_time_map[main_index][sub_index]
+            ax.axhline(y=tuple_generation_time, color='purple', linestyle='--', linewidth=1.5,
+                       label=f"Tuple Generation ({tuple_generation_time} {y_unit})")
+            min_y, max_y = min(df_group[y_column].min(), tuple_generation_time), df_group[y_column].max()
+
+        y_scale = max_y / min_y
+
+        for i, benchmark in enumerate(df["Benchmark"].unique()):
+            df_benchmark = df_group[df_group["Benchmark"] == benchmark]
+
+            if not df_benchmark.empty:
+
+                marker = markers[i % len(markers)]
+                color = colors[i % len(colors)]
+
+                # Plot the benchmark data
+                ax.plot(df_benchmark["Threads"], df_benchmark[y_column], marker=marker, color=color, linestyle='-',
+                        label=f"{benchmark} ")
+
+                # Collect annotation data
+                for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
+                    annotations.append((x, y))
+
+        # annotate_with_padding(ax, annotations, y_scale)
+
+        # Configure subplot
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
+        ax.set_title(f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)", fontsize=14)
+        ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
+        ax.set_xlabel("Threads", fontsize=12)
+        ax.legend(fontsize=10)
+
+        # Adjust x-axis tick labels for better readability
+        ax.tick_params(axis='x', labelsize=10)
+        ax.tick_params(axis='y', labelsize=10)
+    # Adjust layout to fit all elements
+    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
+    # plt.subplots_adjust(hspace=0.4)
+    # Save the combined plot as a single image
+    output_file = f"{path}/{y_label}_Combined.svg"
+    plt.savefig(output_file, format='svg', bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved combined plot to {output_file}")
+
+def generate_combined_images_tuples_per_second(df, path, grouping_column, y_label, y_column, y_unit, with_baseline=False, with_y_log_scale = False):
+    total_tuple_map = [560040000, 240000000, 60000000]
+
+    # Get unique group values for creating subplots
+    unique_group_values = df[grouping_column].unique()
+    num_groups = len(unique_group_values)
+    # Create a figure with multiple subplots (one per group value)
+    fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
+    if num_groups == 1:
+        axs = [axs]  # Handle case when there's only one subplot
+    # Loop over each group (group_value)
+    for idx, group_value in enumerate(unique_group_values):
+        ax = axs[int(idx / 2)][idx%2]
+        if with_y_log_scale:
+            ax.set_yscale("log")
+        df_group = df[df[grouping_column] == group_value]
+        annotations = []
+
+        main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
+        # min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
+        if with_baseline:
+            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [4.61,1.56]] # non pgo
+            # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
+            # Add a horizontal line for tuple generation time
+            sub_index = 0 if "server" in path else 1
+            tuple_generation_time = tuple_generation_time_map[main_index][sub_index]
+
+            y_value = total_tuple_map[main_index]/tuple_generation_time
+            formatted_y_value = f"{y_value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")  # Swap separators
+
+            ax.axhline(y=total_tuple_map[main_index]/tuple_generation_time, color='purple', linestyle='--', linewidth=1.5,
+                       label=f"Tuple Generation ({formatted_y_value} {y_unit})")
+            # min_y, max_y = df_group[y_column].min(), max(df_group[y_column].max(), total_tuple_map[main_index]/tuple_generation_time )
+
+        # y_scale = max_y / min_y
+
+        for i, benchmark in enumerate(df["Benchmark"].unique()):
+            df_benchmark = df_group[df_group["Benchmark"] == benchmark]
+
+            if not df_benchmark.empty:
+
+                marker = markers[i % len(markers)]
+                color = colors[i % len(colors)]
+
+                # Plot the benchmark data
+                ax.plot(df_benchmark["Threads"], total_tuple_map[main_index]/df_benchmark[y_column], marker=marker, color=color, linestyle='-',
+                        label=f"{benchmark} ")
+
+                # Collect annotation data
+                for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
+                    annotations.append((x, total_tuple_map[main_index]/y))
+
+        # annotate_with_padding(ax, annotations, y_scale)
+
+        # Configure subplot
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
+        ax.set_title(f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)", fontsize=14)
+        ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
+        ax.set_xlabel("Threads", fontsize=12)
+        ax.legend(fontsize=10)
+
+        # Adjust x-axis tick labels for better readability
+        ax.tick_params(axis='x', labelsize=10)
+        ax.tick_params(axis='y', labelsize=10)
+    # Adjust layout to fit all elements
+    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
+    # plt.subplots_adjust(hspace=0.4)
+    # Save the combined plot as a single image
+    output_file = f"{path}/{y_label}_Combined.svg"
+    plt.savefig(output_file, format='svg', bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved combined plot to {output_file}")
 
 def annotate_with_padding(ax, annotations, y_scale):
     # Check for proximity (y-values within a certain tolerance) and adjust text placement
