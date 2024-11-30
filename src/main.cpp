@@ -1,4 +1,6 @@
 
+#include "cmp/orchestration/CollaborativeMorselProcessOrchestrator.hpp"
+#include "cmp/orchestration/CollaborativeMorselProcessingThreadPoolOrchestrator.hpp"
 #include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "lpam/orchestrator/LocalPagesAndMergeOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandOrchestrator.hpp"
@@ -265,6 +267,29 @@ void test_lpam_orchestrator(size_t num_tuples) {
     std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
 }
 
+template<typename Tt>
+void test_cmp_orchestrator(size_t num_tuples) {
+    std::cout << "Running cmp orchestrator" << std::endl;
+    auto time_start = std::chrono::high_resolution_clock::now();
+    CollaborativeMorselProcessOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    orchestrator.run();
+
+    auto written_tuples_per_partition = orchestrator.get_written_tuples_per_partition();
+    auto actual_tuples = 0u;
+    for (auto tuples: written_tuples_per_partition) {
+        actual_tuples += tuples;
+    }
+
+    if (num_tuples == actual_tuples) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed: " << actual_tuples << "/" << num_tuples << std::endl;
+        exit(1);
+    }
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
+}
+
+
 auto main() -> int {
     using Tt = Tuple16;
     std::cout << "Running with tuple type: " << typeid(Tt).name() << std::endl;
@@ -303,6 +328,7 @@ auto main() -> int {
     test_hybrid_orchestrator<Tt>(num_tuples);
     test_radix_selectiv_orchestrator<Tt>(num_tuples);
     test_lpam_orchestrator<Tt>(num_tuples);
+    test_cmp_orchestrator<Tt>(num_tuples);
 
     // auto time_start = std::chrono::high_resolution_clock::now();
     // ContinuousMaterialization<Tt> materialization(num_tuples);

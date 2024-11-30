@@ -3,9 +3,9 @@
 
 #include <mutex>
 
-template<typename T>
+template<typename T, size_t batch_size = 2048>
 class MorselCreator {
-    BatchedTupleGenerator<T> generator;
+    BatchedTupleGenerator<T, batch_size> generator;
     std::mutex mutex;
 
 public:
