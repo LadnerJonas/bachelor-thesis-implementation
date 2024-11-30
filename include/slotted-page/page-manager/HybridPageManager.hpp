@@ -17,12 +17,10 @@
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class HybridPageManager {
     size_t tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
-    size_t num_threads;
     std::array<PartitionData<T>, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
-    std::once_flag distribute_flag;
 
     void allocate_new_page(size_t partition) {
         // assert(page_pool.has_free_page());
@@ -32,8 +30,7 @@ class HybridPageManager {
 
 public:
     explicit HybridPageManager(size_t num_threads)
-        : num_threads(num_threads),
-          thread_barrier(static_cast<long>(num_threads)) {
+        : thread_barrier(static_cast<long>(num_threads)) {
         for (size_t i = 0; i < partitions; i++) {
             allocate_new_page(i);
         }
