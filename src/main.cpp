@@ -1,17 +1,17 @@
 
+#include "hybrid/orchestration/HybridOrchestrator.hpp"
+#include "lpam/orchestrator/LocalPagesAndMergeOrchestrator.hpp"
 #include "on-demand/orchestration/OnDemandOrchestrator.hpp"
+#include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
 #include "radix/materialization/ContiniousMaterialization.hpp"
 #include "radix/orchestration/RadixOrchestrator.hpp"
-#include "tuple-types/tuple-types.hpp"
-
-#include "hybrid/orchestration/HybridOrchestrator.hpp"
-#include "on-demand/orchestration/OnDemandSingleThreadOrchestrator.hpp"
 #include "radix/orchestration/RadixSelectiveOrchestrator.hpp"
 #include "smb/orchestration/SmbBatchedOrchestrator.hpp"
 #include "smb/orchestration/SmbLockFreeBatchedOrchestrator.hpp"
 #include "smb/orchestration/SmbLockFreeOrchestrator.hpp"
 #include "smb/orchestration/SmbOrchestrator.hpp"
 #include "smb/orchestration/SmbSingleThreadOrchestrator.hpp"
+#include "tuple-types/tuple-types.hpp"
 #include "util/get_tuple_num_scaling_value.hpp"
 
 constexpr size_t PAGE_SIZE = 5 * 1024 * 1024;
@@ -243,6 +243,28 @@ void test_hybrid_orchestrator(size_t num_tuples) {
     std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
 }
 
+template<typename Tt>
+void test_lpam_orchestrator(size_t num_tuples) {
+    std::cout << "Running lpam orchestrator" << std::endl;
+    auto time_start = std::chrono::high_resolution_clock::now();
+    LocalPagesAndMergeOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    orchestrator.run();
+
+    auto written_tuples_per_partition = orchestrator.get_written_tuples_per_partition();
+    auto actual_tuples = 0u;
+    for (auto tuples: written_tuples_per_partition) {
+        actual_tuples += tuples;
+    }
+
+    if (num_tuples == actual_tuples) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed: " << actual_tuples << "/" << num_tuples << std::endl;
+        exit(1);
+    }
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms" << std::endl;
+}
+
 auto main() -> int {
     using Tt = Tuple16;
     std::cout << "Running with tuple type: " << typeid(Tt).name() << std::endl;
@@ -280,6 +302,7 @@ auto main() -> int {
     test_radix_orchestrator<Tt>(num_tuples);
     test_hybrid_orchestrator<Tt>(num_tuples);
     test_radix_selectiv_orchestrator<Tt>(num_tuples);
+    test_lpam_orchestrator<Tt>(num_tuples);
 
     // auto time_start = std::chrono::high_resolution_clock::now();
     // ContinuousMaterialization<Tt> materialization(num_tuples);

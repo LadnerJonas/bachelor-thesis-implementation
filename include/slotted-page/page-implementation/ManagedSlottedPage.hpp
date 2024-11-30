@@ -49,7 +49,7 @@ public:
     }
 
     ~ManagedSlottedPage() {
-        if (has_to_be_freed) {
+        if (has_to_be_freed && page_data != nullptr) {
             delete[] page_data;
         }
     }
@@ -63,8 +63,29 @@ public:
           max_tuples(other.max_tuples),
           has_to_be_freed(std::exchange(other.has_to_be_freed, false)) {}
 
+    ManagedSlottedPage &operator=(ManagedSlottedPage &&other) noexcept {
+        if (this != &other) {// Protect against self-assignment
+            // Clean up existing resources if necessary
+            if (has_to_be_freed && page_data != nullptr) {
+                delete[] page_data;// Assuming page_data is dynamically allocated
+            }
+
+            // Transfer the ownership of resources from `other` to this instance
+            page_size = other.page_size;
+            page_data = std::exchange(other.page_data, nullptr);
+            header = std::exchange(other.header, nullptr);
+            slots = std::exchange(other.slots, nullptr);
+            data_section = std::exchange(other.data_section, nullptr);
+            max_tuples = other.max_tuples;
+            has_to_be_freed = std::exchange(other.has_to_be_freed, false);
+
+            // Any additional logic to transfer state or reset `other`
+        }
+        return *this;
+    }
     //copy constructor delete
     ManagedSlottedPage(const ManagedSlottedPage &other) = delete;
+    ManagedSlottedPage &operator=(const ManagedSlottedPage &) = delete;
 
     bool add_tuple(const T &tuple) {
         if (header->tuple_count == max_tuples) {
@@ -145,5 +166,9 @@ public:
 
     size_t get_tuple_count() const {
         return header->tuple_count;
+    }
+
+    void clear() const {
+        header->tuple_count = 0;
     }
 };
