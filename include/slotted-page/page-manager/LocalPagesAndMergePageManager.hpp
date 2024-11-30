@@ -1,5 +1,7 @@
 #pragma once
 #include "slotted-page/page-implementation/ManagedSlottedPage.hpp"
+#include <atomic>
+#include "util/padded/PaddedMutex.hpp"
 #include <array>
 #include <barrier>
 #include <mutex>
@@ -14,10 +16,10 @@ class LocalPagesAndMergePageManager {
     unsigned num_threads;
     std::barrier<> thread_barrier;
     std::once_flag distribute_flag;
-    std::mutex page_mutex;
+    PaddedMutex page_mutex;
     std::atomic<unsigned> thread_chunk_released = 0;
-    unsigned total_partitions_per_thread = partitions / num_threads;
-    unsigned total_partitions_per_thread_remainder = partitions % num_threads;
+    const unsigned total_partitions_per_thread = partitions / num_threads;
+    const unsigned total_partitions_per_thread_remainder = partitions % num_threads;
 
 public:
     explicit LocalPagesAndMergePageManager(const unsigned num_threads) : num_threads(num_threads), thread_barrier(num_threads) {}
@@ -25,7 +27,7 @@ public:
 
     std::vector<std::vector<ManagedSlottedPage<T>>> hand_in_thread_local_pages(std::vector<std::vector<ManagedSlottedPage<T>>> &thread_local_pages) {
         {
-            std::lock_guard lock(page_mutex);
+            std::lock_guard lock(page_mutex.mutex);
             for (size_t partition = 0; partition < partitions; ++partition) {
                 pages[partition].insert(pages[partition].end(),
                                         std::make_move_iterator(thread_local_pages[partition].begin()),
@@ -40,15 +42,12 @@ public:
             sort_and_prepare_pages();
         });
 
-
-        thread_barrier.arrive_and_wait();
-
         const auto thread_chunk = thread_chunk_released.fetch_add(1);
         const auto start_partition = thread_chunk * total_partitions_per_thread + std::min(thread_chunk, total_partitions_per_thread_remainder);
         const auto end_partition = start_partition + total_partitions_per_thread + (thread_chunk < total_partitions_per_thread_remainder ? 1 : 0);
         std::vector<std::vector<ManagedSlottedPage<T>>> thread_pages_to_merge(partitions);
 
-        // std::lock_guard lock(page_mutex);
+        thread_barrier.arrive_and_wait();
         for (size_t partition = start_partition; partition < end_partition; ++partition) {
             auto &pages_to_merge_partition = pages_to_merge[partition];
             if (pages_to_merge_partition.empty()) {
@@ -61,7 +60,7 @@ public:
 
     void sort_and_prepare_pages() {
         for (size_t partition = 0; partition < partitions; ++partition) {
-            std::sort(pages[partition].begin(), pages[partition].end(), [](const ManagedSlottedPage<T> &a, const ManagedSlottedPage<T> &b) {
+             std::ranges::sort(pages[partition].begin(), pages[partition].end(), [](const ManagedSlottedPage<T> &a, const ManagedSlottedPage<T> &b) {
                 return a.get_tuple_count() < b.get_tuple_count();
             });
             auto first_non_full_page = std::find_if(pages[partition].begin(), pages[partition].end(), [](const ManagedSlottedPage<T> &page) {
@@ -77,7 +76,6 @@ public:
     }
 
     void hand_in_merged_pages(std::vector<std::vector<ManagedSlottedPage<T>>> &thread_pages_to_merge) {
-        // std::lock_guard lock(page_mutex);
         for (size_t partition = 0; partition < partitions; ++partition) {
             if (thread_pages_to_merge[partition].empty()) {
                 continue;

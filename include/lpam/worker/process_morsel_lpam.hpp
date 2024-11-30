@@ -23,7 +23,6 @@ void process_morsel_lpam(MorselCreator<T> &morsel_creator, LocalPagesAndMergePag
             }
         }
     }
-
     auto thread_pages_to_merge = page_manager.hand_in_thread_local_pages(thread_local_pages);
     if (thread_pages_to_merge.empty()) {
         return;
