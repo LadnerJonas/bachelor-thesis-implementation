@@ -1,7 +1,6 @@
 #pragma once
 
-#include "cmp/morsel-creation/CollaborativeMorselCreator.hpp"
-#include "cmp/morsel-creation/CollaborativeMorselCreator2.hpp"
+#include "common/morsel-creation/MorselCreator.hpp"
 #include "cmp/thread-pool/CmpThreadPool.hpp"
 #include "slotted-page/page-manager/OnDemandSingleThreadPageManager.hpp"
 
