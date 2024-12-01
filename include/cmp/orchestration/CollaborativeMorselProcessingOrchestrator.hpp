@@ -7,13 +7,13 @@
 #include "cmp/worker/process_morsel_cmp_batched.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-class CollaborativeMorselProcessOrchestrator {
+class CollaborativeMorselProcessingOrchestrator {
     CollaborativeMorselCreator<T> morsel_creator;
     OnDemandSingleThreadPageManager<T, partitions, page_size> page_manager;
     size_t num_threads;
 
 public:
-    explicit CollaborativeMorselProcessOrchestrator(size_t num_tuples, size_t num_threads) : morsel_creator(num_tuples), page_manager(), num_threads(num_threads) {
+    explicit CollaborativeMorselProcessingOrchestrator(size_t num_tuples, size_t num_threads) : morsel_creator(num_tuples), page_manager(), num_threads(num_threads) {
     }
 
     void run() {

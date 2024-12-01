@@ -1,5 +1,5 @@
 
-#include "cmp/orchestration/CollaborativeMorselProcessOrchestrator.hpp"
+#include "cmp/orchestration/CollaborativeMorselProcessingOrchestrator.hpp"
 #include "cmp/orchestration/CollaborativeMorselProcessingThreadPoolOrchestrator.hpp"
 #include "hybrid/orchestration/HybridOrchestrator.hpp"
 #include "lpam/orchestrator/LocalPagesAndMergeOrchestrator.hpp"
@@ -271,7 +271,7 @@ template<typename Tt>
 void test_cmp_orchestrator(size_t num_tuples) {
     std::cout << "Running cmp orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
-    CollaborativeMorselProcessOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    CollaborativeMorselProcessingOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
     orchestrator.run();
 
     auto written_tuples_per_partition = orchestrator.get_written_tuples_per_partition();
