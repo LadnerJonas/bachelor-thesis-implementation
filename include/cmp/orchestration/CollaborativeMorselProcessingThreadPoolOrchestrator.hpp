@@ -7,7 +7,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CollaborativeMorselProcessingThreadPoolOrchestrator {
-    BatchedTupleGenerator<T, 100 * 2048> morsel_creator;
+    MorselCreator<T, 100 * 2048> morsel_creator;
     OnDemandSingleThreadPageManager<T, partitions, page_size> page_manager;
     size_t num_threads;
 
@@ -17,9 +17,17 @@ public:
 
     void run() {
         CmpThreadPool<T, partitions, page_size> thread_pool(std::max(num_threads - 1ul, 1ul), page_manager);
-
-        for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch != nullptr; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
-            thread_pool.dispatchTask(std::move(batch), batch_size);
+        {
+            constexpr auto fetch_threads = 1;
+            std::vector<std::jthread> threads;
+            threads.reserve(fetch_threads);
+            for (int i = 0; i < fetch_threads; i++) {
+                threads.emplace_back([this, &thread_pool] {
+                    for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch != nullptr; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
+                        thread_pool.dispatchTask(std::move(batch), batch_size);
+                    }
+                });
+            }
         }
         thread_pool.stop();
     }
