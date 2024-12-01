@@ -6,7 +6,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CollaborativeMorselProcessingThreadPoolOrchestrator {
-    MorselCreator<T, 100 * 2048> morsel_creator;
+    MorselCreator<T, 10*2048> morsel_creator;
     OnDemandSingleThreadPageManager<T, partitions, page_size> page_manager;
     size_t num_threads;
 
