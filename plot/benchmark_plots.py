@@ -96,7 +96,7 @@ def plot_individual_data(df, output_dir, source, output_prefix, grouping_column=
 
 def plot_combined_data(df, path, grouping_column="tuple_size-Partitions"):
     generate_combined_images_tuples_per_second(df, path, grouping_column, "Tuples_per_Second", "time_sec", "T/sec", with_baseline=False)
-    generate_combined_images_time(df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=False)
+    generate_combined_images_time(df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=True)
     generate_combined_images(df, path, grouping_column, "Instructions", "instructions", "1 Mio")
     generate_combined_images(df, path, grouping_column, "L1_misses", "L1_misses", "1 Mio")
     generate_combined_images(df, path, grouping_column, "LLC_misses", "LLC_misses", "1 Mio")
@@ -176,7 +176,7 @@ def generate_combined_images_time(df, path, grouping_column, y_label, y_column, 
 
         min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
         if with_baseline:
-            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [4.61,1.56]] # non pgo
+            tuple_generation_time_map = [[0.75,0.48], [1.74,1.24], [2.21,1.56]] # non pgo
             # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
             # Add a horizontal line for tuple generation time
             main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
