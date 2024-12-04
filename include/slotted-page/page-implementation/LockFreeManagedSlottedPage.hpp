@@ -15,7 +15,7 @@ class LockFreeManagedSlottedPage {
     HeaderInfoAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
-    size_t max_tuples;
+    const size_t max_tuples;
     bool has_to_be_freed = true;
     struct WriteInfo {
         uint8_t *page_data;
@@ -31,9 +31,7 @@ class LockFreeManagedSlottedPage {
 
 public:
     explicit LockFreeManagedSlottedPage(size_t page_size)
-        : page_size(page_size) {
-        // Compute max possible tuples based on page_data size and tuple/slot size
-        max_tuples = get_max_tuples(page_size);
+        : page_size(page_size), max_tuples(get_max_tuples(page_size)) {
         page_data = new uint8_t[page_size];
 
         // Set up header, slots, and data pointers within the page_data
@@ -46,10 +44,7 @@ public:
     }
 
     LockFreeManagedSlottedPage(size_t page_size, uint8_t *page_data)
-        : page_size(page_size), page_data(page_data), has_to_be_freed(false) {
-        // Compute max possible tuples based on page_data size and tuple/slot size
-        max_tuples = get_max_tuples(page_size);
-
+        : page_size(page_size), page_data(page_data), max_tuples(get_max_tuples(page_size)), has_to_be_freed(false) {
         // Set up header, slots, and data pointers within the page_data
         header = reinterpret_cast<HeaderInfoAtomic *>(page_data);
         slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoAtomic));
@@ -77,9 +72,6 @@ public:
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {
         const auto tuple_count = header->tuple_count.fetch_add(1);
         if (tuple_count >= max_tuples) {
-            if (tuple_count == max_tuples) {
-                return {nullptr, 0, static_cast<unsigned>(max_tuples)};
-            }
             return {nullptr, 0, 0};
         }
         return {page_data, static_cast<unsigned>(page_size), tuple_count};
@@ -98,18 +90,12 @@ public:
         new (slot_start) SlotInfo<T>(tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key());
     }
 
-    [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(unsigned max_tuples_to_write) {
+    [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(const unsigned max_tuples_to_write) {
         const auto tuple_count = header->tuple_count.fetch_add(max_tuples_to_write);
         if (tuple_count >= this->max_tuples) {
-            if (tuple_count == this->max_tuples) {
-                return {nullptr, static_cast<unsigned>(page_size), static_cast<unsigned>(this->max_tuples), 0};
-            }
             return {nullptr, 0, 0, 0};
         }
         const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(this->max_tuples - tuple_count));
-        if (tuples_to_write < max_tuples_to_write) {
-            header->tuple_count.store(this->max_tuples);
-        }
         return {page_data, static_cast<unsigned>(page_size), tuple_count, tuples_to_write};
     }
 
