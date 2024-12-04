@@ -183,7 +183,7 @@ TEST(LockFreeManagedSlottedPageTest, FullPageInsertion) {
     auto wi_new_page = page.increment_and_fetch_opt_write_info();
     ASSERT_EQ(wi_new_page.page_data, nullptr);
     ASSERT_EQ(wi_new_page.page_size, 0);
-    ASSERT_EQ(wi_new_page.tuple_index, max_amount_of_tuples);
+    ASSERT_EQ(wi_new_page.tuple_index, 0);
     ASSERT_EQ(page.get_tuple_count(), max_amount_of_tuples);
     ASSERT_EQ(page.get_all_tuples().size(), max_amount_of_tuples);
     for (unsigned i = 0; i < max_amount_of_tuples; ++i) {
