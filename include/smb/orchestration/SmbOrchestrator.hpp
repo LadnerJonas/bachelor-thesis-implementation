@@ -13,7 +13,7 @@ class SmbOrchestrator {
     size_t num_threads;
 
 public:
-    explicit SmbOrchestrator(size_t num_tuples, size_t num_threads) : morsel_creator(num_tuples), page_manager(num_tuples), num_threads(num_threads) {
+    explicit SmbOrchestrator(size_t num_tuples, size_t num_threads) : morsel_creator(num_tuples), page_manager(), num_threads(num_threads) {
     }
 
     void run() {

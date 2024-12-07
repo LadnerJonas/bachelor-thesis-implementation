@@ -16,15 +16,6 @@ public:
             pages[i].emplace_back(page_size);
         }
     }
-    explicit OnDemandPageManager(size_t tuples) {
-        const auto max_tuples_per_page = ManagedSlottedPage<T>::get_max_tuples(page_size);
-        const auto pages_to_reserve_per_partition = ((tuples + partitions - 1) / partitions + max_tuples_per_page - 1) / max_tuples_per_page;
-        for (size_t i = 0; i < partitions; ++i) {
-            pages[i].reserve(pages_to_reserve_per_partition);
-            pages[i].emplace_back(page_size);
-        }
-    }
-
 
     void insert_tuple(const T &tuple, size_t partition) {
         std::lock_guard lock(partition_locks[partition].mutex);
