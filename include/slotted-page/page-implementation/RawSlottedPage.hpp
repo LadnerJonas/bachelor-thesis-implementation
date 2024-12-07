@@ -30,6 +30,21 @@ public:
         data_section = reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * T::get_size_of_variable_data());
     }
 
+    // move constructor
+    RawSlottedPage(RawSlottedPage &&other) noexcept
+        : page_size(other.page_size),
+          page_data(std::move(other.page_data)),
+          header(reinterpret_cast<HeaderInfoAtomic *>(page_data.get())),
+          slots(reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic))),
+          data_section(reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * T::get_size_of_variable_data())),
+          max_tuples(other.max_tuples) {
+    }
+
+    //copy constructor delete
+    RawSlottedPage(const RawSlottedPage &other) = delete;
+    //copy assignment delete
+    RawSlottedPage &operator=(const RawSlottedPage &other) = delete;
+
     uint8_t *get_page_data() const {
         return page_data.get();
     }
