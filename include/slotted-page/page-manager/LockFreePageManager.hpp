@@ -8,12 +8,13 @@ template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
     std::array<std::vector<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
     std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages;
-    std::array<PaddedMutex, partitions> mutexes;
 
 public:
     LockFreePageManager() {
         for (unsigned i = 0; i < partitions; ++i) {
-            current_pages[i].store(std::make_shared<LockFreeManagedSlottedPage<T>>(page_size));
+            auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
+            current_pages[i].store(new_page);
+            pages[i].push_back(new_page);
         }
     }
 
@@ -24,10 +25,8 @@ public:
         }
         if (wi.tuple_index == LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
             auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
-            std::lock_guard lock(mutexes[partition]);
-            auto old_page = current_pages[partition].load();
+            pages[partition].push_back(new_page);
             current_pages[partition].store(new_page);
-            pages[partition].push_back(old_page);
         }
         LockFreeManagedSlottedPage<T>::add_tuple_using_index(wi, tuple);
     }
@@ -46,17 +45,11 @@ public:
             while (wi.page_data == nullptr) {
                 wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
             }
-            if (wi.tuples_to_write < tuples_left) {
+            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write == LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
                 auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
-                // std::lock_guard lock(mutexes[partition]);
-
-                std::shared_ptr<LockFreeManagedSlottedPage<T>> old_page;
-                do {
-                    old_page = current_pages[partition].load();
-                } while (!current_pages[partition].compare_exchange_strong(old_page, new_page));
-                pages[partition].push_back(old_page);
+                pages[partition].push_back(new_page);
+                current_pages[partition].store(new_page);
             }
-
             LockFreeManagedSlottedPage<T>::add_batch_using_index(buffer + num_tuples - tuples_left, wi);
             tuples_left -= wi.tuples_to_write;
         }
@@ -68,7 +61,6 @@ public:
             for (const auto &page: pages[i]) {
                 result[i] += page->get_tuple_count();
             }
-            result[i] += current_pages[i].load()->get_tuple_count();
         }
         return result;
     }

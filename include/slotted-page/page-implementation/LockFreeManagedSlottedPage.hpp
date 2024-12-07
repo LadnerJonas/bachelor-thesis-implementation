@@ -70,11 +70,15 @@ public:
     LockFreeManagedSlottedPage(const LockFreeManagedSlottedPage &other) = delete;
 
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {
-        const auto tuple_count = header->tuple_count.fetch_add(1);
-        if (tuple_count >= max_tuples) {
-            return {nullptr, 0, 0};
-        }
-        return {page_data, static_cast<unsigned>(page_size), tuple_count};
+        unsigned current_tuple_count;
+        do {
+            current_tuple_count = header->tuple_count.load();
+            if (current_tuple_count >= this->max_tuples) {
+                return {nullptr, 0, 0};
+            }
+        } while (!header->tuple_count.compare_exchange_strong(current_tuple_count, current_tuple_count + 1));
+
+        return {page_data, static_cast<unsigned>(page_size), current_tuple_count};
     }
 
     static void add_tuple_using_index(WriteInfo wi, const T &tuple) {
@@ -91,12 +95,16 @@ public:
     }
 
     [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(const unsigned max_tuples_to_write) {
-        const auto tuple_count = header->tuple_count.fetch_add(max_tuples_to_write);
-        if (tuple_count >= this->max_tuples) {
-            return {nullptr, 0, 0, 0};
-        }
-        const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(this->max_tuples - tuple_count));
-        return {page_data, static_cast<unsigned>(page_size), tuple_count, tuples_to_write};
+        unsigned current_tuple_count;
+        do {
+            current_tuple_count = header->tuple_count.load();
+            if (current_tuple_count >= this->max_tuples) {
+                return {nullptr, 0, 0, 0};
+            }
+        } while (!header->tuple_count.compare_exchange_strong(current_tuple_count, current_tuple_count + max_tuples_to_write));
+
+        const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(this->max_tuples - current_tuple_count));
+        return {page_data, static_cast<unsigned>(page_size), current_tuple_count, tuples_to_write};
     }
 
     static void add_batch_using_index(const T *buffer, BatchedWriteInfo wi) {
