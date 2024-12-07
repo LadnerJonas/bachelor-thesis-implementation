@@ -50,8 +50,8 @@ public:
         auto const tuples_left = num_tuples - std::min(tuples_left_on_page, num_tuples);
         auto const tuples_to_write = num_tuples - tuples_left;
         current_page.increase_tuple_count(tuples_to_write);
-        lock.unlock();
         current_page.add_tuple_batch_with_index(buffer, index, tuples_to_write);
+        lock.unlock();
 
         if (tuples_left > 0) {
             insert_buffer_of_tuples_batched(buffer + num_tuples - tuples_left, tuples_left, partition);
