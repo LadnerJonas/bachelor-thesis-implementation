@@ -401,11 +401,11 @@ void benchmark_CollaborativeMorselProcessingThreadPoolOrchestrator(const unsigne
     auto tuple_count_factor = get_tuple_num_scaling_value<T>();
     for (auto tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate <= 1 * static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor); tuples_to_generate += static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor)) {
         auto run_benchmark = [&](auto partition) {
-            for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
+            for (unsigned threads = 2; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
                 setup_benchmark_params<T>(params, "CMP_ThreadPool_Orchestrator     ", tuples_to_generate, partition, threads);
                 {
-                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
+                    PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 2);
 
                     CollaborativeMorselProcessingThreadPoolOrchestrator<T, partition> orchestrator(tuples_to_generate, threads);
                     orchestrator.run();
