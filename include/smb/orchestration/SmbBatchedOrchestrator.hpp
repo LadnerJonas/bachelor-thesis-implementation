@@ -21,7 +21,7 @@ public:
         threads.reserve(num_threads);
         for (unsigned i = 0; i < num_threads; i++) {
             threads.emplace_back([this] {
-                process_morsel_smb_batched<T, partitions, page_size>(morsel_creator, page_manager);
+                process_morsel_smb_batched<T, partitions, page_size>(morsel_creator, page_manager, num_threads);
             });
         }
     }
