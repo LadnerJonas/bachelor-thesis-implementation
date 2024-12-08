@@ -57,7 +57,7 @@ void run_benchmarks(BenchmarkParameters &params, size_t tuples_to_generate, bool
         benchmark_batched<T, batch_size>(tuples_to_generate);
     }
 }
-constexpr size_t batch_sizes[] = {32, 1024, 2048, 4096};
+constexpr size_t batch_sizes[] = {32, 1024, 2048, 4096, 10 * 2048};
 int main() {
     BenchmarkParameters params;
     for (size_t tuples_to_generate_base = 40'000'000u; tuples_to_generate_base <= 40'000'000u; tuples_to_generate_base *= 10) {
@@ -69,6 +69,7 @@ int main() {
         run_benchmarks<Tuple16, batch_sizes[1]>(params, tuples_to_generate);
         run_benchmarks<Tuple16, batch_sizes[2]>(params, tuples_to_generate);
         run_benchmarks<Tuple16, batch_sizes[3]>(params, tuples_to_generate);
+        run_benchmarks<Tuple16, batch_sizes[4]>(params, tuples_to_generate);
 
         // Tuple100 benchmarks for all batch sizes
         tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * get_tuple_num_scaling_value<Tuple100>());
@@ -78,6 +79,7 @@ int main() {
         run_benchmarks<Tuple100, batch_sizes[1]>(params, tuples_to_generate);
         run_benchmarks<Tuple100, batch_sizes[2]>(params, tuples_to_generate);
         run_benchmarks<Tuple100, batch_sizes[3]>(params, tuples_to_generate);
+        run_benchmarks<Tuple100, batch_sizes[4]>(params, tuples_to_generate);
 
         // Tuple4 benchmarks for all batch sizes
         tuples_to_generate = static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * get_tuple_num_scaling_value<Tuple4>());
@@ -87,5 +89,6 @@ int main() {
         run_benchmarks<Tuple4, batch_sizes[1]>(params, tuples_to_generate);
         run_benchmarks<Tuple4, batch_sizes[2]>(params, tuples_to_generate);
         run_benchmarks<Tuple4, batch_sizes[3]>(params, tuples_to_generate);
+        run_benchmarks<Tuple4, batch_sizes[4]>(params, tuples_to_generate);
     }
 }
