@@ -72,9 +72,8 @@ public:
     LockFreeManagedSlottedPage &operator=(const LockFreeManagedSlottedPage &other) = delete;
 
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {
-        unsigned current_tuple_count;
+        unsigned current_tuple_count = header->tuple_count.load();
         do {
-            current_tuple_count = header->tuple_count.load();
             if (current_tuple_count >= this->max_tuples) {
                 return {nullptr, 0, 0};
             }
@@ -97,9 +96,8 @@ public:
     }
 
     [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(const unsigned max_tuples_to_write) {
-        unsigned current_tuple_count;
+        unsigned current_tuple_count = header->tuple_count.load();
         do {
-            current_tuple_count = header->tuple_count.load();
             if (current_tuple_count >= this->max_tuples) {
                 return {nullptr, 0, 0, 0};
             }

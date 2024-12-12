@@ -27,8 +27,8 @@ void process_morsel_smb_lock_free(MorselCreator<T> &morsel_creator, LockFreePage
     }
 
     for (unsigned i = 0; i < partitions; ++i) {
-        auto partition_offset = i * buffer_size_per_partition;
         if (buffer_index[i] > 0) {
+            const auto partition_offset = i * buffer_size_per_partition;
             page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_index[i], i);
         }
     }
