@@ -14,7 +14,7 @@ public:
     }
 
     void run() {
-        constexpr static auto total_buffer_size = 4 * 1024 * 1024 / sizeof(T);
+        constexpr static auto total_buffer_size = 16 * 1024 * 1024 / sizeof(T);
         constexpr static auto buffer_size_per_partition = total_buffer_size / partitions;
         std::array<unsigned, partitions> buffer_index = {};
         std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);

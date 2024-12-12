@@ -16,7 +16,7 @@ void process_morsel_cmp_batched(const unsigned thread_id, const unsigned total_t
 
 
     std::array<unsigned, partitions> buffer_index = {};
-    const auto total_buffer_size = 1 * 1024 * 1024 / sizeof(T);
+    const auto total_buffer_size = 8 * 1024 * 1024 / sizeof(T);
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
     const auto buffer_size_per_partition = total_buffer_size / partitions_to_consider;
     auto batch_to_process = 0u;
