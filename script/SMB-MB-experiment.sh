@@ -7,12 +7,12 @@ FILES=(
 )
 
 # Target values in KB and MB
-VALUES=(128 256 512 1024 2048 4096 8192 16384) # 128KiB to 16MiB
+VALUES=(2048 4096 8192 16384 32768 65536 131072) # 2MiB to 128MiB
 
 # Build and benchmark command
 BUILD_CMD="cmake --build --preset release-build"
 BENCHMARK_CMD="build/release/benchmark/benchmark_shuffle"
-BENCHMARK_OUTPUT_DIR="../benchmark"
+BENCHMARK_OUTPUT_DIR="../benchmark-results/smb-experiments"
 
 # Create the output directory if it doesn't exist
 mkdir -p "$BENCHMARK_OUTPUT_DIR"
