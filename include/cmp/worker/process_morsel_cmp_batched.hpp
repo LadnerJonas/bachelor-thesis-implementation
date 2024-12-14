@@ -33,7 +33,7 @@ void process_morsel_cmp_batched(const unsigned thread_id, const unsigned total_t
             auto partition_offset = (partition - start_partition) * buffer_size_per_partition;
 
             if (index == buffer_size_per_partition) {
-                page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_size_per_partition, partition);
+                page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);
                 index = 0;
             }
 
@@ -43,9 +43,9 @@ void process_morsel_cmp_batched(const unsigned thread_id, const unsigned total_t
     }
 
     for (unsigned i = start_partition; i < end_partition; ++i) {
-        auto partition_offset = (i-start_partition) * buffer_size_per_partition;
+        auto partition_offset = (i - start_partition) * buffer_size_per_partition;
         if (buffer_index[i] > 0) {
-            page_manager.insert_buffer_of_tuples(buffer.get() + partition_offset, buffer_index[i], i);
+            page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_index[i], i);
         }
     }
 }
