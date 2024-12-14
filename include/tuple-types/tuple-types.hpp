@@ -34,7 +34,7 @@ public:
         throw std::runtime_error("Tuple4 does not have variable data");
     }
     constexpr static auto get_size_of_variable_data() {
-        return 0;
+        return 0u;
     }
 };
 
@@ -53,7 +53,7 @@ public:
     [[nodiscard]] const auto get_variable_data() const -> const std::array<uint32_t, 3> & {
         return data;
     }
-    constexpr static auto get_size_of_variable_data() {
+    constexpr static unsigned get_size_of_variable_data() {
         assert(sizeof(data) == 12);
         return sizeof(data);
     }
@@ -74,7 +74,7 @@ public:
     [[nodiscard]] const auto get_variable_data() const -> const std::array<uint32_t, 24> & {
         return data;
     }
-    constexpr static auto get_size_of_variable_data() {
+    constexpr static unsigned get_size_of_variable_data() {
         assert(sizeof(std::array<uint32_t, 24>) == 96);
         return sizeof(std::array<uint32_t, 24>);
     }
