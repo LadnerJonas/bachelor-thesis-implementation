@@ -11,7 +11,7 @@ void process_morsel_smb_batched(MorselCreator<T> &morsel_creator, OnDemandPageMa
 
     for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
         for (size_t i = 0; i < batch_size; ++i) {
-            const auto tuple = batch[i];
+            const auto &tuple = batch[i];
             const auto partition = partition_function<T, partitions>(tuple);
             auto &index = buffer_index[partition];
             const auto partition_offset = partition * buffer_size_per_partition;

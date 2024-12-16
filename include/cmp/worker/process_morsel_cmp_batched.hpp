@@ -1,6 +1,7 @@
 #pragma once
 #include "cmp/morsel-creation/CollaborativeMorselCreator.hpp"
 #include "slotted-page/page-manager/OnDemandSingleThreadPageManager.hpp"
+#include "util/partitioning_function.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel_cmp_batched(const unsigned thread_id, const unsigned total_thread_count, CollaborativeMorselCreator<T> &morsel_creator, OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager) {
