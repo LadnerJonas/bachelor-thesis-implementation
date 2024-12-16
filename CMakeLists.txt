@@ -7,14 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-interference-size")
 set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -fno-omit-frame-pointer -fno-inline -fsanitize=thread,undefined -D_GLIBCXX_DEBUG")
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
-set(CMAKE_CXX_FLAGS_PROFILE "-O3 -march=native -DNDEBUG -g -fno-omit-frame-pointer -fno-inline")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG -fno-exceptions")
+set(CMAKE_CXX_FLAGS_PROFILE "-O3 -march=native -DNDEBUG -fno-exceptions -g -fno-omit-frame-pointer -fno-inline")
+
 # PGO
 # (Instrumentation phase)
 set(PROFILE_DATA_DIR "${CMAKE_SOURCE_DIR}/profile_data")
-set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O3 -march=native -fprofile-generate=${PROFILE_DATA_DIR} -DNDEBUG")
+set(CMAKE_CXX_FLAGS_PGO_INSTRUMENT "-O3 -march=native -fprofile-generate=${PROFILE_DATA_DIR} -DNDEBUG -fno-exceptions")
 # (Optimization phase using collected profile data)
-set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O3 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG")
+set(CMAKE_CXX_FLAGS_PGO_OPTIMIZE "-O3 -march=native -fprofile-use=${PROFILE_DATA_DIR} -fprofile-correction -DNDEBUG -fno-exceptions")
 
 #lto
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
