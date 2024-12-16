@@ -25,13 +25,11 @@ class Tuple4 : public BenchmarkTuple {
 public:
     Tuple4() = default;
     explicit Tuple4(const KeyType key) : BenchmarkTuple(key) {}
-    Tuple4(const KeyType key, const std::array<uint32_t, 0> &) : BenchmarkTuple(key) {
-        throw std::runtime_error("Tuple4 does not have variable data");
-    }
+    Tuple4(const KeyType key, const std::array<uint32_t, 0> &) : BenchmarkTuple(key) {}
     Tuple4(const Tuple4 &other) = default;
     Tuple4 &operator=(const Tuple4 &other) = default;
-    [[nodiscard]] static const auto get_variable_data() -> int & {
-        throw std::runtime_error("Tuple4 does not have variable data");
+    [[nodiscard]] static const auto get_variable_data() -> int {
+        return 0;
     }
     constexpr static auto get_size_of_variable_data() {
         return 0u;
