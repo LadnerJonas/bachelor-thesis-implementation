@@ -115,9 +115,9 @@ public:
                 std::memcpy(tuple_start, &buffer[i].get_variable_data(), T::get_size_of_variable_data());
             }
         }
+        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + index * sizeof(SlotInfo<T>));
         for (unsigned i = 0; i < tuples_to_write; i++) {
-            auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + (index + i) * sizeof(SlotInfo<T>));
-            new (slot_start) SlotInfo<T>{first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key()};
+            new (slot_start + i) SlotInfo<T>{first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key()};
         }
     }
 
