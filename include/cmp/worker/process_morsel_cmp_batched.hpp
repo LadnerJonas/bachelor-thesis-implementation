@@ -24,7 +24,7 @@ void process_morsel_cmp_batched(const unsigned thread_id, const unsigned total_t
 
     for (auto [batch, batch_size] = morsel_creator.requestBatchCollaboratively(batch_to_process++); batch != nullptr; std::tie(batch, batch_size) = morsel_creator.requestBatchCollaboratively(batch_to_process++)) {
         for (size_t i = 0; i < batch_size; ++i) {
-            auto tuple = batch[i];
+            auto &tuple = batch[i];
             auto partition = partition_function<T, partitions>(tuple);
             if (partition < start_partition || partition >= end_partition) {
                 continue;
