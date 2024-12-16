@@ -45,7 +45,7 @@ public:
             while (wi.page_data == nullptr) {
                 wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
             }
-            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write == LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
+            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
                 auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
                 pages[partition].push_back(new_page);
                 current_pages[partition].store(new_page);

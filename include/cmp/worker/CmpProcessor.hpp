@@ -29,7 +29,7 @@ public:
 
     void process(T *batch_ptr, size_t batch_size) {
         for (size_t i = 0; i < batch_size; ++i) {
-            auto tuple = batch_ptr[i];
+            const auto &tuple = batch_ptr[i];
             auto partition = partition_function<T, partitions>(tuple);
             if (partition < start_partition || partition >= end_partition) {
                 continue;

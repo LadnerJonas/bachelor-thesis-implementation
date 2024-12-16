@@ -1,4 +1,5 @@
 #pragma once
+#include "slotted-page/page-manager/LockFreePageManager.hpp"
 #include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "util/partitioning_function.hpp"
 #include <array>
@@ -15,10 +16,10 @@ class CmpProcessorOfUnit {
 
     static constexpr auto total_buffer_size = 1 * 1024 * 1024 / sizeof(T);
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
-    OnDemandPageManager<T, partitions, page_size> &page_manager;
+    LockFreePageManager<T, partitions, page_size> &page_manager;
 
 public:
-    CmpProcessorOfUnit(unsigned thread_id, unsigned total_thread_count, OnDemandPageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
+    CmpProcessorOfUnit(unsigned thread_id, unsigned total_thread_count, LockFreePageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
         auto partitions_per_thread = partitions / total_thread_count;
         auto remainder_partitions = partitions % total_thread_count;
         start_partition = thread_id * partitions_per_thread + std::min(thread_id, static_cast<unsigned>(remainder_partitions));
@@ -27,9 +28,9 @@ public:
         buffer_size_per_partition = total_buffer_size / partitions_to_consider;
     }
 
-    void process(T *batch_ptr, size_t batch_size) {
+    void process(T *batch_ptr, const size_t batch_size) {
         for (size_t i = 0; i < batch_size; ++i) {
-            auto tuple = batch_ptr[i];
+            const auto &tuple = batch_ptr[i];
             auto partition = partition_function<T, partitions>(tuple);
             if (partition < start_partition || partition >= end_partition) {
                 continue;
