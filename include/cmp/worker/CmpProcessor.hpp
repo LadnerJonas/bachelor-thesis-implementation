@@ -13,7 +13,7 @@ class CmpProcessor {
 
     std::array<unsigned, partitions> buffer_index = {};
 
-    static constexpr auto total_buffer_size = 8 * 1024 * 1024 / sizeof(T);
+    static constexpr auto total_buffer_size = 1 * 1024 * 1024 / sizeof(T);
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
     OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager;
 
