@@ -14,17 +14,18 @@ class CmpProcessorOfUnit {
 
     std::array<unsigned, partitions> buffer_index = {};
 
-    static constexpr auto total_buffer_size = 1 * 1024 * 1024 / sizeof(T);
-    std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
+    std::unique_ptr<T[]> buffer;
     LockFreePageManager<T, partitions, page_size> &page_manager;
 
 public:
-    CmpProcessorOfUnit(unsigned thread_id, unsigned total_thread_count, LockFreePageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
-        auto partitions_per_thread = partitions / total_thread_count;
-        auto remainder_partitions = partitions % total_thread_count;
+    CmpProcessorOfUnit(const unsigned thread_id, const unsigned thread_count_per_processing_unit, const unsigned total_count_of_threads, LockFreePageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
+        const auto partitions_per_thread = partitions / thread_count_per_processing_unit;
+        const auto remainder_partitions = partitions % thread_count_per_processing_unit;
         start_partition = thread_id * partitions_per_thread + std::min(thread_id, static_cast<unsigned>(remainder_partitions));
         end_partition = start_partition + partitions_per_thread + (thread_id < remainder_partitions ? 1 : 0);
-        auto partitions_to_consider = end_partition - start_partition;
+        const auto partitions_to_consider = end_partition - start_partition;
+        const unsigned total_buffer_size = 256 * 1024 / (sizeof(T) * total_count_of_threads);
+        buffer = std::make_unique<T[]>(total_buffer_size);
         buffer_size_per_partition = total_buffer_size / partitions_to_consider;
     }
 

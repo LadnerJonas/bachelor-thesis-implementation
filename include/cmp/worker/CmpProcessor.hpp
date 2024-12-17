@@ -13,17 +13,18 @@ class CmpProcessor {
 
     std::array<unsigned, partitions> buffer_index = {};
 
-    static constexpr auto total_buffer_size = 1 * 1024 * 1024 / sizeof(T);
-    std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
+    std::unique_ptr<T[]> buffer;
     OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager;
 
 public:
-    CmpProcessor(unsigned thread_id, unsigned total_thread_count, OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
+    CmpProcessor(const unsigned thread_id, const unsigned total_thread_count, OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
         auto partitions_per_thread = partitions / total_thread_count;
         auto remainder_partitions = partitions % total_thread_count;
         start_partition = thread_id * partitions_per_thread + std::min(thread_id, static_cast<unsigned>(remainder_partitions));
         end_partition = start_partition + partitions_per_thread + (thread_id < remainder_partitions ? 1 : 0);
         auto partitions_to_consider = end_partition - start_partition;
+        auto total_buffer_size = 256 * 1024 / (sizeof(T) * total_thread_count);
+        buffer = std::make_unique<T[]>(total_buffer_size);
         buffer_size_per_partition = total_buffer_size / partitions_to_consider;
     }
 

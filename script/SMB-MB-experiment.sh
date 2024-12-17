@@ -4,10 +4,12 @@
 FILES=(
     "include/smb/worker/process_morsel_smb_batched.hpp"
     "include/smb/worker/process_morsel_smb_lock_free_batched.hpp"
+    "include/cmp/worker/CmpProcessor.hpp"
+    "include/smb/worker/CmpProcessorOfUnit.hpp"
 )
 
 # Target values in KB and MB
-VALUES=(2048 4096 8192 16384 32768 65536 131072) # 2MiB to 128MiB
+VALUES=(256 512 1024 2048 4096 8192 16384 32768 65536) # 256KiB to 128MiB
 
 # Build and benchmark command
 BUILD_CMD="cmake --build --preset release-build"
@@ -56,6 +58,7 @@ for VALUE in "${VALUES[@]}"; do
     # Prepend size label to orchestrator names
     echo "Prepending size label to orchestrator names in ${OUTPUT_FILE}..."
     sed -i "s/^Smb/${SIZE_LABEL}-&/g" "$OUTPUT_FILE"
+    sed -i "s/^CmpProcessor/${SIZE_LABEL}-&/g" "$OUTPUT_FILE"
 
     # Append the contents of the current benchmark file to the concatenated output file
     cat "$OUTPUT_FILE" >> "$CONCATENATED_OUTPUT"

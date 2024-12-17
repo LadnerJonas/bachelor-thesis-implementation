@@ -44,8 +44,8 @@ public:
 
             thread_finished[pu].store(all_workers_done_mask[pu]);
             for (size_t w = 0; w < num_worker; ++w) {
-                workers[pu].emplace_back([this, pu, w, num_worker] {
-                    CmpProcessorOfUnit<T, partitions, page_size> processor(w, num_worker, this->page_manager);
+                workers[pu].emplace_back([this, pu, w, num_worker, worker_threads] {
+                    CmpProcessorOfUnit<T, partitions, page_size> processor(w, num_worker, worker_threads, this->page_manager);
                     T *last_ptr = nullptr;
                     while (running[pu].load()) {
                         while ((thread_finished[pu].load() & 1u << w) != 0) {
