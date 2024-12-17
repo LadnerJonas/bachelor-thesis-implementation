@@ -3,18 +3,21 @@
 #include "slotted-page/page-implementation/LockFreeManagedSlottedPage.hpp"
 #include "util/padded/PaddedAtomic.hpp"
 #include <array>
+#include <deque>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
-    std::array<std::vector<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
-    std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages;
+    std::array<std::deque<LockFreeManagedSlottedPage<T>>, partitions> pages{};
+    std::array<PaddedAtomic<LockFreeManagedSlottedPage<T>*>, partitions> current_pages{};
+    void add_page(unsigned partition) {
+        pages[partition].emplace_back(page_size);
+        current_pages[partition].store(&pages[partition].back());
+    }
 
 public:
     LockFreePageManager() {
         for (unsigned i = 0; i < partitions; ++i) {
-            auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
-            current_pages[i].store(new_page);
-            pages[i].push_back(new_page);
+            add_page(i);
         }
     }
 
@@ -24,9 +27,7 @@ public:
             wi = current_pages[partition].load()->increment_and_fetch_opt_write_info();
         }
         if (wi.tuple_index == LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
-            auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
-            pages[partition].push_back(new_page);
-            current_pages[partition].store(new_page);
+            add_page(partition);
         }
         LockFreeManagedSlottedPage<T>::add_tuple_using_index(wi, tuple);
     }
@@ -46,9 +47,7 @@ public:
                 wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
             }
             if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
-                auto new_page = std::make_shared<LockFreeManagedSlottedPage<T>>(page_size);
-                pages[partition].push_back(new_page);
-                current_pages[partition].store(new_page);
+                add_page(partition);
             }
             LockFreeManagedSlottedPage<T>::add_batch_using_index(buffer + num_tuples - tuples_left, wi);
             tuples_left -= wi.tuples_to_write;
@@ -59,7 +58,7 @@ public:
         std::vector<size_t> result(partitions, 0);
         for (size_t i = 0; i < partitions; ++i) {
             for (const auto &page: pages[i]) {
-                result[i] += page->get_tuple_count();
+                result[i] += page.get_tuple_count();
             }
         }
         return result;
