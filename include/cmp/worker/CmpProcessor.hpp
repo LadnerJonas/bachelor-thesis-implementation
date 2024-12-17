@@ -7,9 +7,10 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CmpProcessor {
-    size_t start_partition;
-    size_t end_partition;
-    size_t buffer_size_per_partition;
+    static constexpr unsigned buffer_base_value = partitions <= 32 ? 256 : 4 * 1024;
+    unsigned start_partition;
+    unsigned end_partition;
+    unsigned buffer_size_per_partition;
 
     std::array<unsigned, partitions> buffer_index = {};
 
@@ -18,17 +19,17 @@ class CmpProcessor {
 
 public:
     CmpProcessor(const unsigned thread_id, const unsigned total_thread_count, OnDemandSingleThreadPageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
-        auto partitions_per_thread = partitions / total_thread_count;
-        auto remainder_partitions = partitions % total_thread_count;
+        const auto partitions_per_thread = partitions / total_thread_count;
+        const auto remainder_partitions = partitions % total_thread_count;
         start_partition = thread_id * partitions_per_thread + std::min(thread_id, static_cast<unsigned>(remainder_partitions));
         end_partition = start_partition + partitions_per_thread + (thread_id < remainder_partitions ? 1 : 0);
-        auto partitions_to_consider = end_partition - start_partition;
-        auto total_buffer_size = 256 * 1024 / (sizeof(T) * total_thread_count);
+        const auto partitions_to_consider = end_partition - start_partition;
+        const auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * total_thread_count);
         buffer = std::make_unique<T[]>(total_buffer_size);
         buffer_size_per_partition = total_buffer_size / partitions_to_consider;
     }
 
-    void process(T *batch_ptr, size_t batch_size) {
+    void process(T *batch_ptr, const size_t batch_size) {
         for (size_t i = 0; i < batch_size; ++i) {
             const auto &tuple = batch_ptr[i];
             auto partition = partition_function<T, partitions>(tuple);
