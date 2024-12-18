@@ -29,7 +29,7 @@ public:
         threads.reserve(fetch_threads);
         for (int i = 0; i < fetch_threads; i++) {
             threads.emplace_back([this, &thread_pool, numProcessingUnits] {
-                int current_processing_unit = 0;
+                unsigned current_processing_unit = 0;
                 for (auto [batch, batch_size] = tuple_creator.getBatchOfTuples(); batch != nullptr; std::tie(batch, batch_size) = tuple_creator.getBatchOfTuples()) {
                     thread_pool.dispatchTask(current_processing_unit, std::move(batch), batch_size);
                     current_processing_unit = (current_processing_unit + 1) % numProcessingUnits;

@@ -13,7 +13,6 @@ class CmpThreadPoolWithProcessingUnits {
 
     std::vector<std::vector<std::jthread>> workers;
     std::vector<std::pair<std::unique_ptr<T[]>, size_t>> current_tasks;
-    std::vector<PaddedMutex> dispatch_mutex;
     std::vector<unsigned> all_workers_done_mask;
     std::vector<PaddedAtomic<bool>> running;
     std::vector<PaddedAtomic<unsigned>> thread_finished;
@@ -24,9 +23,6 @@ public:
         current_tasks.reserve(processingUnits);
         all_workers_done_mask.reserve(processingUnits);
         {
-            std::vector<PaddedMutex> temp_dispatch_mutex(processingUnits);
-            dispatch_mutex.swap(temp_dispatch_mutex);
-
             std::vector<PaddedAtomic<unsigned>> temp_thread_finished(processingUnits);
             thread_finished.swap(temp_thread_finished);
 
@@ -49,7 +45,7 @@ public:
                     T *last_ptr = nullptr;
                     while (running[pu].load()) {
                         while ((thread_finished[pu].load() & 1u << w) != 0) {
-                            std::this_thread::yield();
+                            // std::this_thread::yield();
                         }
                         auto new_ptr = current_tasks[pu].first.get();
                         if (running[pu].load() && new_ptr != last_ptr) {
@@ -65,10 +61,10 @@ public:
         }
     }
 
-    void dispatchTask(const unsigned processingUnitId, std::unique_ptr<T[]> data, size_t size) {
-        std::lock_guard lock(dispatch_mutex[processingUnitId]);
+    void dispatchTask(unsigned &processingUnitId, std::unique_ptr<T[]> data, size_t size) {
         while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-            std::this_thread::yield();
+            // std::this_thread::yield();
+            processingUnitId = (processingUnitId + 1) % processingUnits;
         }
         current_tasks[processingUnitId].first = std::move(data);
         current_tasks[processingUnitId].second = size;
@@ -76,9 +72,8 @@ public:
     }
 
     void stop(const unsigned processingUnitId) {
-        std::lock_guard lock(dispatch_mutex[processingUnitId]);
         while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-            std::this_thread::yield();
+            // std::this_thread::yield();
         }
         running[processingUnitId].store(false);
         thread_finished[processingUnitId].store(0);
