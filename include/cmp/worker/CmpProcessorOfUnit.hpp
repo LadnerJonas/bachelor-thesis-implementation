@@ -13,9 +13,7 @@ class CmpProcessorOfUnit {
     unsigned end_partition;
     unsigned buffer_size_per_partition;
 
-
     std::array<unsigned, partitions> buffer_index = {};
-
     std::unique_ptr<T[]> buffer;
     LockFreePageManager<T, partitions, page_size> &page_manager;
 

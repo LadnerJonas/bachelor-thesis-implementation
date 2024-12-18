@@ -66,8 +66,7 @@ public:
             // std::this_thread::yield();
             processingUnitId = (processingUnitId + 1) % processingUnits;
         }
-        current_tasks[processingUnitId].first = std::move(data);
-        current_tasks[processingUnitId].second = size;
+        current_tasks[processingUnitId] = std::make_pair(std::move(data), size);
         thread_finished[processingUnitId].store(0);
     }
 
