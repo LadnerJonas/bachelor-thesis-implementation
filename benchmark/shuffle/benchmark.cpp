@@ -374,7 +374,7 @@ void benchmark_CollaborativeMorselProcessingOrchestrator(const unsigned tuples_t
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
-                setup_benchmark_params<T>(params, "CMP_Orchestrator                ", tuples_to_generate, partition, threads);
+                setup_benchmark_params<T>(params, "CmpOrchestrator                 ", tuples_to_generate, partition, threads);
                 {
                     PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
@@ -404,7 +404,7 @@ void benchmark_CollaborativeMorselProcessingThreadPoolOrchestrator(const unsigne
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 2; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
-                setup_benchmark_params<T>(params, "CMP_ThreadPool_Orchestrator     ", tuples_to_generate, partition, threads);
+                setup_benchmark_params<T>(params, "CmpThreadPoolOrchestrator       ", tuples_to_generate, partition, threads);
                 {
                     PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 2);
 
@@ -433,7 +433,7 @@ void benchmark_CollaborativeMorselProcessingThreadPoolWithProcessingUnitsOrchest
         auto run_benchmark = [&](auto partition) {
             for (unsigned threads = 2; threads <= std::thread::hardware_concurrency(); threads *= 2) {
                 BenchmarkParameters params;
-                setup_benchmark_params<T>(params, "CMP_ThreadPool_OrchestratorPUnit", tuples_to_generate, partition, threads);
+                setup_benchmark_params<T>(params, "CmpThreadPoolOrchestratorProUnit", tuples_to_generate, partition, threads);
                 {
                     PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 2);
 
