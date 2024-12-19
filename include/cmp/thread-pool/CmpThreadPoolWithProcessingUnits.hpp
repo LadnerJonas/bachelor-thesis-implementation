@@ -35,7 +35,8 @@ public:
             running[pu].store(true);
             workers.emplace_back();
 
-            const unsigned num_worker = worker_threads / processingUnits + (pu < worker_threads % processingUnits ? 1 : 0);
+            unsigned num_worker = worker_threads / processingUnits + (pu < worker_threads % processingUnits ? 1 : 0);
+            num_worker = std::min(static_cast<unsigned>(partitions), num_worker);
             all_workers_done_mask.emplace_back((1u << num_worker) - 1);
 
             thread_finished[pu].store(all_workers_done_mask[pu]);
