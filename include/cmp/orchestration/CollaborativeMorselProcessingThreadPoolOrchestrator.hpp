@@ -1,12 +1,12 @@
 #pragma once
 
-#include "common/morsel-creation/MorselCreator.hpp"
 #include "cmp/thread-pool/CmpThreadPool.hpp"
+#include "common/morsel-creation/MorselCreator.hpp"
 #include "slotted-page/page-manager/OnDemandSingleThreadPageManager.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CollaborativeMorselProcessingThreadPoolOrchestrator {
-    MorselCreator<T, 10*2048> morsel_creator;
+    MorselCreator<T, 10 * 2048> morsel_creator;
     OnDemandSingleThreadPageManager<T, partitions, page_size> page_manager;
     size_t num_threads;
 
@@ -15,7 +15,8 @@ public:
     }
 
     void run() {
-        CmpThreadPool<T, partitions, page_size> thread_pool(std::max(num_threads - 1ul, 1ul), page_manager);
+        num_threads = std::min(std::max(num_threads - 1ul, 1ul), partitions);
+        CmpThreadPool<T, partitions, page_size> thread_pool(num_threads, page_manager);
         {
             constexpr auto fetch_threads = 1;
             std::vector<std::jthread> threads;
