@@ -111,12 +111,15 @@ public:
         const auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic) + wi.tuple_index * sizeof(SlotInfo<T>));
         unsigned tuple_offset = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
         for (unsigned i = 0; i < wi.tuples_to_write; ++i) {
-            if constexpr (T::get_size_of_variable_data() > 0) {
-                std::memcpy(wi.page_data + tuple_offset, &buffer[i].get_variable_data(), T::get_size_of_variable_data());
-            }
-
             new (slot_start + i) SlotInfo<T>{tuple_offset, T::get_size_of_variable_data(), buffer[i].get_key()};
             tuple_offset -= T::get_size_of_variable_data();
+        }
+        if constexpr (T::get_size_of_variable_data() > 0) {
+            tuple_offset = wi.page_size - (wi.tuple_index + wi.tuples_to_write) * T::get_size_of_variable_data();
+            for (int i = wi.tuples_to_write - 1; i >= 0; --i) {
+                std::memcpy(wi.page_data + tuple_offset, &buffer[i].get_variable_data(), T::get_size_of_variable_data());
+                tuple_offset += T::get_size_of_variable_data();
+            }
         }
     }
 
