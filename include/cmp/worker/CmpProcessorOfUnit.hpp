@@ -54,6 +54,7 @@ public:
                 if (buffer_index[i] > 0) {
                     page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_index[i], i);
                 }
+                buffer_index[i] = 0;
             }
         }
     }

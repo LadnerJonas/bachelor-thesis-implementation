@@ -43,20 +43,13 @@ public:
             for (size_t w = 0; w < num_worker; ++w) {
                 workers[pu].emplace_back([this, pu, w, num_worker, worker_threads] {
                     CmpProcessorOfUnit<T, partitions, page_size> processor(w, num_worker, worker_threads, this->page_manager);
-                    T *last_ptr = nullptr;
                     while (running[pu].load()) {
                         while ((thread_finished[pu].load() & 1u << w) != 0) {
                             // std::this_thread::yield();
                         }
-                        auto new_ptr = current_tasks[pu].first.get();
-                        if (running[pu].load() && new_ptr != last_ptr) {
-                            last_ptr = new_ptr;
-                            processor.process(current_tasks[pu].first.get(), current_tasks[pu].second);
-                        }
+                        processor.process(current_tasks[pu].first.get(), current_tasks[pu].second);
                         thread_finished[pu] |= 1u << w;
                     }
-
-                    processor.process(nullptr, 0);
                 });
             }
         }
@@ -75,6 +68,7 @@ public:
         while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
             // std::this_thread::yield();
         }
+        current_tasks[processingUnitId] = {nullptr, 0};
         running[processingUnitId].store(false);
         thread_finished[processingUnitId].store(0);
         for (auto &worker: workers[processingUnitId]) {
