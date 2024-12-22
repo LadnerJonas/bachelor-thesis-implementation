@@ -7,7 +7,7 @@
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
     std::array<std::vector<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
-    std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages;
+    std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages{};
 
     void add_page(unsigned partition) {
         pages[partition].emplace_back(std::make_shared<LockFreeManagedSlottedPage<T>>(page_size));

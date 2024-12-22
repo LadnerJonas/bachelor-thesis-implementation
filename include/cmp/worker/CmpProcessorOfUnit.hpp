@@ -1,6 +1,5 @@
 #pragma once
 #include "slotted-page/page-manager/LockFreePageManager.hpp"
-#include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "util/partitioning_function.hpp"
 #include <array>
 #include <memory>
@@ -50,11 +49,10 @@ public:
         }
         if (batch_size == 0) {
             for (unsigned i = start_partition; i < end_partition; ++i) {
-                auto partition_offset = (i - start_partition) * buffer_size_per_partition;
                 if (buffer_index[i] > 0) {
+                    const auto partition_offset = (i - start_partition) * buffer_size_per_partition;
                     page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_index[i], i);
                 }
-                buffer_index[i] = 0;
             }
         }
     }
