@@ -107,7 +107,7 @@ public:
         return {page_data, static_cast<unsigned>(page_size), current_tuple_count, tuples_to_write};
     }
 
-    static void add_batch_using_index(const T *buffer, BatchedWriteInfo &wi) {
+    static void add_batch_using_index(const T *buffer, const BatchedWriteInfo &wi) {
         const auto slot_start = reinterpret_cast<SlotInfo<T> *>(wi.page_data + sizeof(HeaderInfoAtomic) + wi.tuple_index * sizeof(SlotInfo<T>));
         unsigned tuple_offset = wi.page_size - (wi.tuple_index + 1) * T::get_size_of_variable_data();
         for (unsigned i = 0; i < wi.tuples_to_write; ++i) {
