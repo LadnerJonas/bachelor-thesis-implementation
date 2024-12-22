@@ -7,17 +7,12 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CmpProcessorOfUnit {
-    struct BufferPartitionInfo {
-        unsigned buffer_offset = 0;
-        unsigned write_out_index = 0;
-        BufferPartitionInfo() = default;
-    };
     static constexpr unsigned buffer_base_value = partitions <= 32 ? 256 : 4 * 1024;
     unsigned start_partition;
     unsigned end_partition;
     unsigned buffer_size_per_partition;
 
-    std::array<BufferPartitionInfo, partitions> buffer_partition_info;
+    std::array<unsigned, partitions> buffer_index = {};
     std::unique_ptr<T[]> buffer;
     LockFreePageManager<T, partitions, page_size> &page_manager;
 
@@ -31,10 +26,6 @@ public:
         const unsigned total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * total_count_of_threads);
         buffer = std::make_unique<T[]>(total_buffer_size);
         buffer_size_per_partition = total_buffer_size / partitions_to_consider;
-
-        for (unsigned i = start_partition; i < end_partition; ++i) {
-            buffer_partition_info[i].buffer_offset = (i - start_partition) * buffer_size_per_partition;
-        }
     }
 
     void process(T *batch_ptr, const size_t batch_size) {
@@ -45,19 +36,22 @@ public:
                 continue;
             }
 
-            auto &index = buffer_partition_info[partition].write_out_index;
+            auto &index = buffer_index[partition];
+            auto partition_offset = (partition - start_partition) * buffer_size_per_partition;
+
             if (index == buffer_size_per_partition) {
-                page_manager.insert_buffer_of_tuples_batched(buffer.get() + buffer_partition_info[partition].buffer_offset, buffer_size_per_partition, partition);
+                page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);
                 index = 0;
             }
 
-            buffer[buffer_partition_info[partition].buffer_offset + index] = tuple;
+            buffer[partition_offset + index] = tuple;
             ++index;
         }
         if (batch_size == 0) {
             for (unsigned i = start_partition; i < end_partition; ++i) {
-                if (buffer_partition_info[i].write_out_index > 0) {
-                    page_manager.insert_buffer_of_tuples_batched(buffer.get() + buffer_partition_info[i].buffer_offset, buffer_partition_info[i].write_out_index, i);
+                if (buffer_index[i] > 0) {
+                    const auto partition_offset = (i - start_partition) * buffer_size_per_partition;
+                    page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_index[i], i);
                 }
             }
         }
