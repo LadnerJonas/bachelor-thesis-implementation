@@ -31,13 +31,13 @@ public:
     void process(T *batch_ptr, const size_t batch_size) {
         for (size_t i = 0; i < batch_size; ++i) {
             const auto &tuple = batch_ptr[i];
-            auto partition = partition_function<T, partitions>(tuple);
+            const auto partition = partition_function<T, partitions>(tuple);
             if (partition < start_partition || partition >= end_partition) {
                 continue;
             }
 
             auto &index = buffer_index[partition];
-            auto partition_offset = (partition - start_partition) * buffer_size_per_partition;
+            const auto partition_offset = (partition - start_partition) * buffer_size_per_partition;
 
             if (index == buffer_size_per_partition) {
                 page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);

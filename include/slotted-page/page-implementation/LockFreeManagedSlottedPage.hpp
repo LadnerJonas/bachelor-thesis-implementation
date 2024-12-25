@@ -17,6 +17,8 @@ class LockFreeManagedSlottedPage {
     T *data_section;
     const size_t max_tuples;
     bool has_to_be_freed = true;
+
+public:
     struct WriteInfo {
         uint8_t *page_data;
         unsigned page_size;
@@ -29,7 +31,6 @@ class LockFreeManagedSlottedPage {
         unsigned tuples_to_write;
     };
 
-public:
     explicit LockFreeManagedSlottedPage(size_t page_size)
         : page_size(page_size), max_tuples(get_max_tuples(page_size)) {
         page_data = new uint8_t[page_size];
@@ -123,7 +124,7 @@ public:
         }
     }
 
-    static size_t get_max_tuples(const size_t page_size) {
+    static constexpr size_t get_max_tuples(const size_t page_size) {
         return (page_size - sizeof(HeaderInfoAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 

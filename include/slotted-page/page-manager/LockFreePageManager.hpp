@@ -43,11 +43,11 @@ public:
     void insert_buffer_of_tuples_batched(const T *buffer, const size_t num_tuples, const size_t partition) {
         auto tuples_left = num_tuples;
         while (tuples_left > 0) {
-            auto wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
-            while (wi.page_data == nullptr) {
+            typename LockFreeManagedSlottedPage<T>::BatchedWriteInfo wi;
+            do {
                 wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
-            }
-            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
+            } while (wi.page_data == nullptr);
+            if (wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
                 add_page(partition);
             }
             LockFreeManagedSlottedPage<T>::add_batch_using_index(buffer + num_tuples - tuples_left, wi);
