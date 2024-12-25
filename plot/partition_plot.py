@@ -4,34 +4,60 @@ import matplotlib.pyplot as plt
 
 
 parser = argparse.ArgumentParser(description="Benchmark Analysis")
-parser.add_argument("--source", choices=['laptop', 'server'], required=True, help="Source of the benchmark data (laptop/server)")
-parser.add_argument("--input-file", required=True, help="Path to the benchmark data file")
-parser.add_argument("--output-dir", required=True, help="Directory to save the output plots")
+parser.add_argument(
+    "--source",
+    choices=["laptop", "server"],
+    required=True,
+    help="Source of the benchmark data (laptop/server)",
+)
+parser.add_argument(
+    "--input-file", required=True, help="Path to the benchmark data file"
+)
+parser.add_argument(
+    "--output-dir", required=True, help="Directory to save the output plots"
+)
 
 args = parser.parse_args()
+
 
 # Function to read and process the data
 def read_benchmark_data(file_path):
     # Read the file and skip the header lines (comments)
     df = pd.read_csv(
         file_path,
-        delimiter=',',
-        comment='A',
+        delimiter=",",
+        comment="A",
         names=[
-            "Benchmark", "Tuple Size", "Tuples", "GB", "Partitions", "Threads",
-            "Time (s)", "Cycles", "kCycles", "Instructions", "L1 Misses", "LLC Misses",
-            "Branch Misses", "Task Clock", "Scale", "IPC", "CPUs", "GHz"
+            "Benchmark",
+            "Tuple Size",
+            "Tuples",
+            "GB",
+            "Partitions",
+            "Threads",
+            "Time (s)",
+            "Cycles",
+            "kCycles",
+            "Instructions",
+            "L1 Misses",
+            "LLC Misses",
+            "Branch Misses",
+            "Task Clock",
+            "Scale",
+            "IPC",
+            "CPUs",
+            "GHz",
         ],
-        skip_blank_lines=True
+        skip_blank_lines=True,
     )
     # Convert relevant columns to numeric values
-    df["Tuple Size"] = pd.to_numeric(df["Tuple Size"], errors='coerce')
-    df["Partitions"] = pd.to_numeric(df["Partitions"], errors='coerce')
-    df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors='coerce')
+    df["Tuple Size"] = pd.to_numeric(df["Tuple Size"], errors="coerce")
+    df["Partitions"] = pd.to_numeric(df["Partitions"], errors="coerce")
+    df["Time (s)"] = pd.to_numeric(df["Time (s)"], errors="coerce")
 
     # Drop any rows with missing data
     df.dropna(inplace=True)
     return df
+
 
 # Function to plot time vs. number of partitions
 def plot_time_vs_partitions(df, source, output_dir):
@@ -48,6 +74,7 @@ def plot_time_vs_partitions(df, source, output_dir):
     plt.grid(True)
     plt.legend()
     plt.savefig(f"{output_dir}/{source}/partitions.png")
+
 
 # python plot/partition_plot.py --source=laptop --input-file=../benchmark-results/laptop-2024-11-08-partition2.txt --output-dir=plot/output
 if __name__ == "__main__":
