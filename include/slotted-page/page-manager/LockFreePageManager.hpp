@@ -11,9 +11,8 @@ class LockFreePageManager {
     std::array<PaddedAtomic<LockFreeManagedSlottedPage<T> *>, partitions> current_pages;
 
     void add_page(unsigned partition) {
-        auto new_page = new LockFreeManagedSlottedPage<T>(page_size);
-        pages[partition].emplace_back(new_page);
-        current_pages[partition].store(new_page);
+        pages[partition].emplace_back(new LockFreeManagedSlottedPage<T>(page_size));
+        current_pages[partition].store(pages[partition].back());
     }
 
 public:
