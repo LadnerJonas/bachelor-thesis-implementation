@@ -115,7 +115,7 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
-        ax = axs[int(idx / 2)][idx%2]
+        list_of_thread = set()
         ax = axs[int(idx / number_cols)][idx%number_cols]
         df_group = df[df[grouping_column] == group_value]
         annotations = []
@@ -138,6 +138,14 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
                 # Collect annotation data
                 for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
                     annotations.append((x, y))
+                    list_of_thread.add(int(x))
+
+        # annotate_with_padding(ax, annotations, y_scale)
+        max_thread_count = max(list_of_thread)
+        for i in range(2, max_thread_count, 2):
+            list_of_thread.add(i)
+
+        list_of_thread = list(list_of_thread)
 
         annotate_with_padding(ax, annotations, y_scale)
 
@@ -147,6 +155,7 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
         ax.set_xlabel("Threads", fontsize=12)
         ax.legend(fontsize=10)
+        ax.set_xticks(list_of_thread)
 
         # Adjust x-axis tick labels for better readability
         ax.tick_params(axis='x', labelsize=10)
@@ -171,7 +180,7 @@ def generate_combined_images_time(df, path, grouping_column, y_label, y_column, 
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
-        ax = axs[int(idx / 2)][idx%2]
+        list_of_thread = set()
         ax = axs[int(idx / number_cols)][idx%number_cols]
         if with_y_log_scale:
             ax.set_yscale("log")
@@ -207,8 +216,14 @@ def generate_combined_images_time(df, path, grouping_column, y_label, y_column, 
                 # Collect annotation data
                 for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
                     annotations.append((x, y))
+                    list_of_thread.add(int(x))
 
         # annotate_with_padding(ax, annotations, y_scale)
+        max_thread_count = max(list_of_thread)
+        for i in range(2, max_thread_count, 2):
+            list_of_thread.add(i)
+
+        list_of_thread = list(list_of_thread)
 
         # Configure subplot
         ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
@@ -216,6 +231,7 @@ def generate_combined_images_time(df, path, grouping_column, y_label, y_column, 
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
         ax.set_xlabel("Threads", fontsize=12)
         ax.legend(fontsize=10)
+        ax.set_xticks(list_of_thread)
 
         # Adjust x-axis tick labels for better readability
         ax.tick_params(axis='x', labelsize=10)
@@ -237,14 +253,13 @@ def generate_combined_images_tuples_per_second(df, path, grouping_column, y_labe
     num_groups = len(unique_group_values)
     number_cols = 2
     # Create a figure with multiple subplots (one per group value)
-    fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
     fig, axs = plt.subplots(ncols=number_cols, nrows=3, figsize=(12*number_cols, 6*3))
 
     if num_groups == 1:
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
-        ax = axs[int(idx / 2)][idx%2]
+        list_of_thread = set()
         ax = axs[int(idx / number_cols)][idx%number_cols]
         if with_y_log_scale:
             ax.set_yscale("log")
@@ -284,8 +299,14 @@ def generate_combined_images_tuples_per_second(df, path, grouping_column, y_labe
                 # Collect annotation data
                 for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
                     annotations.append((x, total_tuple_map[main_index]/y))
+                    list_of_thread.add(int(x))
 
         # annotate_with_padding(ax, annotations, y_scale)
+        max_thread_count = max(list_of_thread)
+        for i in range(2, max_thread_count, 2):
+            list_of_thread.add(i)
+
+        list_of_thread = list(list_of_thread)
 
         # Configure subplot
         ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
@@ -293,6 +314,7 @@ def generate_combined_images_tuples_per_second(df, path, grouping_column, y_labe
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
         ax.set_xlabel("Threads", fontsize=12)
         ax.legend(fontsize=10)
+        ax.set_xticks(list_of_thread)
 
         # Adjust x-axis tick labels for better readability
         ax.tick_params(axis='x', labelsize=10)
