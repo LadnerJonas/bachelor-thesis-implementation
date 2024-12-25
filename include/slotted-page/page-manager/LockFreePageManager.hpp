@@ -3,15 +3,16 @@
 #include "slotted-page/page-implementation/LockFreeManagedSlottedPage.hpp"
 #include "util/padded/PaddedAtomic.hpp"
 #include <array>
+#include <memory>
 #include <vector>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
-    std::array<std::vector<LockFreeManagedSlottedPage<T> *>, partitions> pages;
-    std::array<PaddedAtomic<LockFreeManagedSlottedPage<T> *>, partitions> current_pages;
+    std::array<std::vector<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
+    std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages{};
 
     void add_page(unsigned partition) {
-        pages[partition].emplace_back(new LockFreeManagedSlottedPage<T>(page_size));
+        pages[partition].emplace_back(std::make_shared<LockFreeManagedSlottedPage<T>>(page_size));
         current_pages[partition].store(pages[partition].back());
     }
 
@@ -19,14 +20,6 @@ public:
     LockFreePageManager() {
         for (unsigned i = 0; i < partitions; ++i) {
             add_page(i);
-        }
-    }
-
-    ~LockFreePageManager() {
-        for (unsigned i = 0; i < partitions; ++i) {
-            for (auto &page: pages[i]) {
-                delete page;
-            }
         }
     }
 
@@ -42,7 +35,7 @@ public:
     }
 
     void insert_buffer_of_tuples(const T *buffer, const size_t num_tuples, const size_t partition) {
-        for (size_t i = 0; i < num_tuples; i++) {
+        for (unsigned i = 0; i < num_tuples; i++) {
             insert_tuple(buffer[i], partition);
         }
     }
