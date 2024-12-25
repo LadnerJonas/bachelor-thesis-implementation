@@ -30,7 +30,7 @@ parser.add_argument("--grouping-column", type=str, default="tuple_size-Partition
 args = parser.parse_args()
 
 columns = ["Benchmark", "tuple_size", "Tuples", "GB", "Partitions", "Threads", "time_sec", "cycles", "kcycles",
-           "instructions", "L1_misses", "LLC_misses", "branch_misses", "task_clock", "scale", "IPC", "CPUs", "GHz",
+           "instructions", "L1_misses", "LLC_misses", "branch_misses", "tlb_misses", "task_clock", "scale", "IPC", "CPUs", "GHz",
            "tuple_size-Partitions"]
 
 os.makedirs(args.output_dir, exist_ok=True)
@@ -108,13 +108,15 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
+    number_cols = 2
     # Create a figure with multiple subplots (one per group value)
-    fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
+    fig, axs = plt.subplots(ncols=number_cols, nrows=3, figsize=(12*number_cols, 6*3))
     if num_groups == 1:
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
         ax = axs[int(idx / 2)][idx%2]
+        ax = axs[int(idx / number_cols)][idx%number_cols]
         df_group = df[df[grouping_column] == group_value]
         annotations = []
 
@@ -162,20 +164,22 @@ def generate_combined_images_time(df, path, grouping_column, y_label, y_column, 
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
+    number_cols = 2
     # Create a figure with multiple subplots (one per group value)
-    fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
+    fig, axs = plt.subplots(ncols=number_cols, nrows=3, figsize=(12*number_cols, 6*3))
     if num_groups == 1:
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
         ax = axs[int(idx / 2)][idx%2]
+        ax = axs[int(idx / number_cols)][idx%number_cols]
         if with_y_log_scale:
             ax.set_yscale("log")
         df_group = df[df[grouping_column] == group_value]
         annotations = []
 
         min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
-        if with_baseline:
+        if with_baseline and number_cols == 2:
             tuple_generation_time_map = [[0.75,0.48], [1.74,1.24], [2.21,1.56]] # non pgo
             # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
             # Add a horizontal line for tuple generation time
@@ -231,22 +235,26 @@ def generate_combined_images_tuples_per_second(df, path, grouping_column, y_labe
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
+    number_cols = 2
     # Create a figure with multiple subplots (one per group value)
     fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(24, 18))
+    fig, axs = plt.subplots(ncols=number_cols, nrows=3, figsize=(12*number_cols, 6*3))
+
     if num_groups == 1:
         axs = [axs]  # Handle case when there's only one subplot
     # Loop over each group (group_value)
     for idx, group_value in enumerate(unique_group_values):
         ax = axs[int(idx / 2)][idx%2]
+        ax = axs[int(idx / number_cols)][idx%number_cols]
         if with_y_log_scale:
             ax.set_yscale("log")
         df_group = df[df[grouping_column] == group_value]
         annotations = []
 
         main_index = 0 if (df_group["tuple_size"] == 4).any() else (1 if(df_group["tuple_size"] == 16).any() else 2)
-        # min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
-        if with_baseline:
-            tuple_generation_time_map = [[1.41,0.48], [3.13,1.24], [4.61,1.56]] # non pgo
+        min_y, max_y = df_group[y_column].min(), df_group[y_column].max()
+        if with_baseline and number_cols == 2:
+            tuple_generation_time_map = [[0.75,0.48], [1.74,1.24], [2.21,1.56]] # non pgo
             # tuple_generation_time_map = [[1.36,0.27], [3.19,0.77], [4.76,0.87]] # pgo
             # Add a horizontal line for tuple generation time
             sub_index = 0 if "server" in path else 1
@@ -257,9 +265,9 @@ def generate_combined_images_tuples_per_second(df, path, grouping_column, y_labe
 
             ax.axhline(y=total_tuple_map[main_index]/tuple_generation_time, color='purple', linestyle='--', linewidth=1.5,
                        label=f"Tuple Generation ({formatted_y_value} {y_unit})")
-            # min_y, max_y = df_group[y_column].min(), max(df_group[y_column].max(), total_tuple_map[main_index]/tuple_generation_time )
+            min_y, max_y = df_group[y_column].min(), max(df_group[y_column].max(), total_tuple_map[main_index]/tuple_generation_time )
 
-        # y_scale = max_y / min_y
+        y_scale = max_y / min_y
 
         for i, benchmark in enumerate(df["Benchmark"].unique()):
             df_benchmark = df_group[df_group["Benchmark"] == benchmark]
