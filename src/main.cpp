@@ -292,7 +292,7 @@ void test_cmp_orchestrator(size_t num_tuples) {
 
 template<typename Tt>
 void test_cmp_thread_pool_orchestrator(size_t num_tuples) {
-    std::cout << "Running cmp orchestrator" << std::endl;
+    std::cout << "Running cmp thread pool orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
     CollaborativeMorselProcessingThreadPoolOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
     orchestrator.run();
