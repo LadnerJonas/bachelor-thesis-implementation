@@ -2,9 +2,12 @@
 
 #include "cmp/worker/CmpProcessorOfUnit.hpp"
 #include "slotted-page/page-manager/LockFreePageManager.hpp"
+#include "util/padded/PaddedAtomic.hpp"
+#include "util/padded/PaddedMutex.hpp"
 
 #include <thread>
 #include <vector>
+
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CmpThreadPoolWithProcessingUnits {
     LockFreePageManager<T, partitions, page_size> &page_manager;
@@ -16,6 +19,7 @@ class CmpThreadPoolWithProcessingUnits {
     std::vector<unsigned> all_workers_done_mask;
     std::vector<PaddedAtomic<bool>> running;
     std::vector<PaddedAtomic<unsigned>> thread_finished;
+    std::vector<PaddedMutex> dispatch_mutex;
 
 public:
     explicit CmpThreadPoolWithProcessingUnits(const unsigned processingUnits, const unsigned worker_threads, LockFreePageManager<T, partitions, page_size> &page_manager)
@@ -28,6 +32,9 @@ public:
 
             std::vector<PaddedAtomic<bool>> temp_running(processingUnits);
             running.swap(temp_running);
+
+            std::vector<PaddedMutex> temp_dispatch_mutex(processingUnits);
+            dispatch_mutex.swap(temp_dispatch_mutex);
         }
 
         for (size_t pu = 0; pu < processingUnits; ++pu) {
@@ -57,9 +64,16 @@ public:
 
     void dispatchTask(unsigned &processingUnitId, std::unique_ptr<T[]> data, size_t size) {
         while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-            // std::this_thread::yield();
+        // std::this_thread::yield();
+        retry:
             processingUnitId = (processingUnitId + 1) % processingUnits;
         }
+
+        std::lock_guard lock(dispatch_mutex[processingUnitId]);
+        if (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
+            goto retry;
+        }
+
         current_tasks[processingUnitId] = std::make_pair(std::move(data), size);
         thread_finished[processingUnitId].store(0);
     }
