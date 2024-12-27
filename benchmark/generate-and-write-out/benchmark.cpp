@@ -88,7 +88,7 @@ void benchmark_write_out(const std::chrono::milliseconds time_to_write_out, cons
 }
 int main() {
     constexpr auto time_to_write_out = std::chrono::milliseconds(1000);
-    constexpr size_t block_size = 500 * 1024 * 1024;
+    constexpr size_t block_size = 5 * 1024 * 1024;
 
     benchmark_write_out<Tuple4>(time_to_write_out, block_size / 4);
     benchmark_write_out<Tuple16>(time_to_write_out, block_size / 16);
