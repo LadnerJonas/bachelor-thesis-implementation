@@ -14,14 +14,9 @@ public:
     }
 
     void run() {
-        const unsigned generator_thread_count = std::max(num_threads / 4, 1ul);
-        const unsigned partition_thread_count = std::max(num_threads - generator_thread_count, 1ul);
-        auto numProcessingUnits = 1u;
-        if (partition_thread_count >= 8) {
-            numProcessingUnits = 3;
-        } else if (partition_thread_count >= 4) {
-            numProcessingUnits = 2;
-        }
+        unsigned numProcessingUnits = std::max(num_threads / 3, 1ul);
+        const unsigned generator_thread_count = numProcessingUnits;
+        unsigned partition_thread_count = std::max(num_threads - numProcessingUnits, 1ul);
 
         CmpThreadPoolWithProcessingUnits<T, partitions, page_size> thread_pool(numProcessingUnits, partition_thread_count, page_manager);
         {
@@ -30,10 +25,12 @@ public:
             for (unsigned i = 0; i < generator_thread_count; i++) {
                 generator_threads.emplace_back([&, i] {
                     BatchedTupleGenerator<T, 10 * 2048> tuple_creator(num_tuples / generator_thread_count + (num_tuples % generator_thread_count > i ? 1 : 0));
-                    unsigned current_processing_unit = i % numProcessingUnits;
-                    for (auto [batch, batch_size] = tuple_creator.getBatchOfTuples(); batch != nullptr; std::tie(batch, batch_size) = tuple_creator.getBatchOfTuples()) {
-                        thread_pool.dispatchTask(current_processing_unit, std::move(batch), batch_size);
-                        current_processing_unit = (current_processing_unit + 1) % numProcessingUnits;
+                    while (true) {
+                        auto [batch, batch_size] = tuple_creator.getBatchOfTuples();
+                        if (batch == nullptr) {
+                            break;
+                        }
+                        thread_pool.dispatchTask(i, std::move(batch), batch_size);
                     }
                 });
             }
