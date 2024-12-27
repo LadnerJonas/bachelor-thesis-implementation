@@ -3,6 +3,7 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "slotted-page/page-implementation/HeaderInfo.hpp"
@@ -15,7 +16,6 @@ class LockFreeManagedSlottedPage {
     HeaderInfoAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
-    const size_t max_tuples;
     bool has_to_be_freed = true;
 
 public:
@@ -32,24 +32,24 @@ public:
     };
 
     explicit LockFreeManagedSlottedPage(size_t page_size)
-        : page_size(page_size), max_tuples(get_max_tuples(page_size)) {
+        : page_size(page_size) {
         page_data = new uint8_t[page_size];
 
         // Set up header, slots, and data pointers within the page_data
         header = reinterpret_cast<HeaderInfoAtomic *>(page_data);
         slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoAtomic));
-        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
+        data_section = reinterpret_cast<T *>(page_data + page_size - get_max_tuples(page_size) * sizeof(T));
 
         // Initialize header values
         header->tuple_count = 0;
     }
 
     LockFreeManagedSlottedPage(size_t page_size, uint8_t *page_data)
-        : page_size(page_size), page_data(page_data), max_tuples(get_max_tuples(page_size)), has_to_be_freed(false) {
+        : page_size(page_size), page_data(page_data), has_to_be_freed(false) {
         // Set up header, slots, and data pointers within the page_data
         header = reinterpret_cast<HeaderInfoAtomic *>(page_data);
         slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoAtomic));
-        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
+        data_section = reinterpret_cast<T *>(page_data + page_size - get_max_tuples(page_size) * sizeof(T));
         // Initialize header values
         header->tuple_count = 0;
     }
@@ -62,11 +62,24 @@ public:
 
     // move constructor
     LockFreeManagedSlottedPage(LockFreeManagedSlottedPage &&other) noexcept
-        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), max_tuples(other.max_tuples), has_to_be_freed(other.has_to_be_freed) {
+        : page_size(other.page_size), page_data(other.page_data), header(other.header), slots(other.slots), data_section(other.data_section), has_to_be_freed(other.has_to_be_freed) {
         other.slots = nullptr;
         other.data_section = nullptr;
         other.has_to_be_freed = false;
     }
+    // move assignment
+    LockFreeManagedSlottedPage &operator=(LockFreeManagedSlottedPage &&other) noexcept {
+        if (this != &other) {
+            page_size = other.page_size;
+            page_data = std::exchange(other.page_data, nullptr);
+            header = std::exchange(other.header, nullptr);
+            slots = std::exchange(other.slots, nullptr);
+            data_section = std::exchange(other.data_section, nullptr);
+            has_to_be_freed = std::exchange(other.has_to_be_freed, false);
+        }
+        return *this;
+    }
+
     //copy constructor delete
     LockFreeManagedSlottedPage(const LockFreeManagedSlottedPage &other) = delete;
     //copy assignment delete
@@ -75,7 +88,7 @@ public:
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {
         unsigned current_tuple_count = header->tuple_count.load();
         do {
-            if (current_tuple_count >= this->max_tuples) {
+            if (current_tuple_count >= get_max_tuples(page_size)) {
                 return {nullptr, 0, 0};
             }
         } while (!header->tuple_count.compare_exchange_strong(current_tuple_count, current_tuple_count + 1));
@@ -99,12 +112,12 @@ public:
     [[nodiscard]] BatchedWriteInfo increment_and_fetch_opt_write_info(const unsigned max_tuples_to_write) {
         unsigned current_tuple_count = header->tuple_count.load();
         do {
-            if (current_tuple_count >= this->max_tuples) {
+            if (current_tuple_count >= get_max_tuples(page_size)) {
                 return {nullptr, 0, 0, 0};
             }
         } while (!header->tuple_count.compare_exchange_strong(current_tuple_count, current_tuple_count + max_tuples_to_write));
 
-        const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(this->max_tuples - current_tuple_count));
+        const auto tuples_to_write = std::min(max_tuples_to_write, static_cast<unsigned>(get_max_tuples(page_size) - current_tuple_count));
         return {page_data, static_cast<unsigned>(page_size), current_tuple_count, tuples_to_write};
     }
 
@@ -163,6 +176,6 @@ public:
     }
 
     [[nodiscard]] size_t get_tuple_count() const {
-        return std::min(static_cast<size_t>(header->tuple_count.load()), max_tuples);
+        return std::min(static_cast<size_t>(header->tuple_count.load()), get_max_tuples(page_size));
     }
 };
