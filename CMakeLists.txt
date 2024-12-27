@@ -42,7 +42,7 @@ add_custom_target(format
 add_custom_target(tidy
         COMMAND git diff --name-only -- '*.cpp' '*.hpp' > modified_files.txt
         COMMAND cat modified_files.txt
-        COMMAND clang-tidy -fix -fix-errors `cat modified_files.txt` -- -I${CMAKE_SOURCE_DIR}/include
+        COMMAND clang-tidy --extra-arg=-std=c++23 -fix -fix-errors `cat modified_files.txt` -- -I${CMAKE_SOURCE_DIR}/include
         COMMAND rm modified_files.txt
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy on modified .cpp and .hpp files"
