@@ -63,19 +63,22 @@ public:
     }
 
     void dispatchTask(unsigned &processingUnitId, std::unique_ptr<T[]> data, size_t size) {
-        while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-        // std::this_thread::yield();
-        retry:
+        while (true) {
+            while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
+                processingUnitId = (processingUnitId + 1) % processingUnits;
+            }
+
+            {
+                std::lock_guard lock(dispatch_mutex[processingUnitId]);
+                if (thread_finished[processingUnitId].load() == all_workers_done_mask[processingUnitId]) {
+                    current_tasks[processingUnitId] = std::make_pair(std::move(data), size);
+                    thread_finished[processingUnitId].store(0);
+                    break;
+                }
+            }
+
             processingUnitId = (processingUnitId + 1) % processingUnits;
         }
-
-        std::lock_guard lock(dispatch_mutex[processingUnitId]);
-        if (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-            goto retry;
-        }
-
-        current_tasks[processingUnitId] = std::make_pair(std::move(data), size);
-        thread_finished[processingUnitId].store(0);
     }
 
     void stop(const unsigned processingUnitId) {

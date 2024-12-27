@@ -30,7 +30,7 @@ public:
             for (unsigned i = 0; i < generator_thread_count; i++) {
                 generator_threads.emplace_back([&, i] {
                     BatchedTupleGenerator<T, 10 * 2048> tuple_creator(num_tuples / generator_thread_count + (num_tuples % generator_thread_count > i ? 1 : 0));
-                    unsigned current_processing_unit = i;
+                    unsigned current_processing_unit = i % numProcessingUnits;
                     for (auto [batch, batch_size] = tuple_creator.getBatchOfTuples(); batch != nullptr; std::tie(batch, batch_size) = tuple_creator.getBatchOfTuples()) {
                         thread_pool.dispatchTask(current_processing_unit, std::move(batch), batch_size);
                         current_processing_unit = (current_processing_unit + 1) % numProcessingUnits;
