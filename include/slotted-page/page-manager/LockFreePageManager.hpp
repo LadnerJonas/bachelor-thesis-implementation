@@ -4,15 +4,16 @@
 #include "util/padded/PaddedAtomic.hpp"
 #include <array>
 #include <memory>
+#include <deque>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
-    std::array<std::vector<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
-    std::array<PaddedAtomic<std::shared_ptr<LockFreeManagedSlottedPage<T>>>, partitions> current_pages{};
+    std::array<std::deque<std::unique_ptr<LockFreeManagedSlottedPage<T>>>, partitions> pages{};
+    std::array<PaddedAtomic<LockFreeManagedSlottedPage<T>*>, partitions> current_pages{};
 
     void add_page(unsigned partition) {
-        pages[partition].emplace_back(std::make_shared<LockFreeManagedSlottedPage<T>>(page_size));
-        current_pages[partition].store(pages[partition].back());
+        pages[partition].emplace_back(std::make_unique<LockFreeManagedSlottedPage<T>>(page_size));
+        current_pages[partition].store(pages[partition].back().get());
     }
 
 public:
