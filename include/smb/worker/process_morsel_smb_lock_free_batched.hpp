@@ -1,16 +1,17 @@
 #pragma once
-#include "common/morsel-creation/MorselCreator.hpp"
+
 #include "slotted-page/page-manager/LockFreePageManager.hpp"
+#include "tuple-generator/BatchedTupleGenerator.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-void process_morsel_smb_lock_free_batched(MorselCreator<T> &morsel_creator, LockFreePageManager<T, partitions, page_size> &page_manager, const size_t num_threads) {
+void process_morsel_smb_lock_free_batched(BatchedTupleGenerator<T> &tuple_generator, LockFreePageManager<T, partitions, page_size> &page_manager, const size_t num_threads) {
     static constexpr unsigned buffer_base_value = partitions <= 32 ? 512 : 4 * 1024;
     const auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * num_threads);
     const auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};
     std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
 
-    for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
+    for (auto [batch, batch_size] = tuple_generator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = tuple_generator.getBatchOfTuples()) {
         for (size_t i = 0; i < batch_size; ++i) {
             const auto &tuple = batch[i];
             const auto partition = partition_function<T, partitions>(tuple);
