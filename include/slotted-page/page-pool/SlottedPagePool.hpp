@@ -1,6 +1,10 @@
 #pragma once
 
-constexpr auto PADDING = 4096u;
+constexpr auto PADDING = 0;
+
+#include <atomic>
+#include <cassert>
+#include <memory>
 
 template<size_t page_size = 5 * 1024 * 1024>
 class SlottedPagePool {
