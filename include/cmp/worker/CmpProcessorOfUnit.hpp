@@ -1,5 +1,6 @@
 #pragma once
-#include "slotted-page/page-manager/LockFreePageManager.hpp"
+
+#include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "util/partitioning_function.hpp"
 #include <array>
 #include <memory>
@@ -14,10 +15,10 @@ class CmpProcessorOfUnit {
 
     std::array<unsigned, partitions> buffer_index = {};
     std::unique_ptr<T[]> buffer;
-    LockFreePageManager<T, partitions, page_size> &page_manager;
+    OnDemandPageManager<T, partitions, page_size> &page_manager;
 
 public:
-    CmpProcessorOfUnit(const unsigned thread_id, const unsigned thread_count_per_processing_unit, const unsigned total_count_of_threads, LockFreePageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
+    CmpProcessorOfUnit(const unsigned thread_id, const unsigned thread_count_per_processing_unit, const unsigned total_count_of_threads, OnDemandPageManager<T, partitions, page_size> &page_manager) : page_manager(page_manager) {
         const auto partitions_per_thread = partitions / thread_count_per_processing_unit;
         const auto remainder_partitions = partitions % thread_count_per_processing_unit;
         start_partition = thread_id * partitions_per_thread + std::min(thread_id, static_cast<unsigned>(remainder_partitions));

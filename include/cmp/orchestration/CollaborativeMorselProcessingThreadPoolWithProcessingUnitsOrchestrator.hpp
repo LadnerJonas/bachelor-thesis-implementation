@@ -1,11 +1,13 @@
+
 #pragma once
 
 #include "cmp/thread-pool/CmpThreadPoolWithProcessingUnits.hpp"
+#include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CollaborativeMorselProcessingThreadPoolWithProcessingUnitsOrchestrator {
-    LockFreePageManager<T, partitions, page_size> page_manager;
+    OnDemandPageManager<T, partitions, page_size> page_manager;
     size_t num_tuples;
     size_t num_threads;
 

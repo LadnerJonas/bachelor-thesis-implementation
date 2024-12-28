@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cmp/worker/CmpProcessorOfUnit.hpp"
-#include "slotted-page/page-manager/LockFreePageManager.hpp"
+#include "slotted-page/page-manager/OnDemandPageManager.hpp"
 #include "util/padded/PaddedAtomic.hpp"
 #include "util/padded/PaddedMutex.hpp"
 
@@ -10,7 +10,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CmpThreadPoolWithProcessingUnits {
-    LockFreePageManager<T, partitions, page_size> &page_manager;
+    OnDemandPageManager<T, partitions, page_size> &page_manager;
     const unsigned processingUnits;
     const unsigned worker_threads;
 
@@ -22,7 +22,7 @@ class CmpThreadPoolWithProcessingUnits {
     std::vector<PaddedMutex> dispatch_mutex;
 
 public:
-    explicit CmpThreadPoolWithProcessingUnits(const unsigned processingUnits, const unsigned worker_threads, LockFreePageManager<T, partitions, page_size> &page_manager)
+    explicit CmpThreadPoolWithProcessingUnits(const unsigned processingUnits, const unsigned worker_threads, OnDemandPageManager<T, partitions, page_size> &page_manager)
         : page_manager(page_manager), processingUnits(processingUnits), worker_threads(worker_threads) {
         current_tasks.reserve(processingUnits);
         all_workers_done_mask.reserve(processingUnits);
