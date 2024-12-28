@@ -4,7 +4,6 @@
 #include "util/padded/PaddedAtomic.hpp"
 #include <array>
 #include <memory>
-#include <vector>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LockFreePageManager {
@@ -47,7 +46,7 @@ public:
             while (wi.page_data == nullptr) {
                 wi = current_pages[partition].load()->increment_and_fetch_opt_write_info(tuples_left);
             }
-            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size) - 1) {
+            if (wi.tuples_to_write < tuples_left || wi.tuple_index + wi.tuples_to_write >= LockFreeManagedSlottedPage<T>::get_max_tuples(page_size)) {
                 add_page(partition);
             }
             LockFreeManagedSlottedPage<T>::add_batch_using_index(buffer + num_tuples - tuples_left, wi);
