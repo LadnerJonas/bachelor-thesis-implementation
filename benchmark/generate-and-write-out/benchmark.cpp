@@ -79,7 +79,7 @@ void benchmark_write_out(const std::chrono::milliseconds time_to_write_out, cons
                   << " (" << static_cast<double>(sizeof(TupleType)) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
                                                                                                                      ", avg: "
                   << static_cast<double>(written_tuples) / (threads * 1e6) << " Mio/thread)"
-                  << " within " << time_to_write_out.count() << " ms\n";
+                  << " within " << time_to_write_out.count() << " ms" << std::endl;
         if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
             threads = 5;
         }
