@@ -1,7 +1,6 @@
 #pragma once
 
 #include "slotted-page/page-implementation/ManagedSlottedPage.hpp"
-#include "slotted-page/page-pool/SlottedPagePool.hpp"
 #include "util/padded/PaddedMutex.hpp"
 #include <array>
 
@@ -37,21 +36,21 @@ public:
     }
 
     void insert_buffer_of_tuples_batched(const T *buffer, const size_t num_tuples, const size_t partition) {
-        std::unique_lock lock(partition_locks[partition].mutex);
-        auto &current_page = pages[partition].back();
-        const auto index = current_page.get_tuple_count();
-        auto tuples_left_on_page = ManagedSlottedPage<T>::get_max_tuples(page_size) - index;
-        if (tuples_left_on_page == 0) {
-            pages[partition].emplace_back(page_size);
-            lock.unlock();
-            insert_buffer_of_tuples_batched(buffer, num_tuples, partition);
-            return;
+        unsigned tuples_left = num_tuples;
+        {
+            std::lock_guard lock(partition_locks[partition].mutex);
+            auto &current_page = pages[partition].back();
+            const auto index = current_page.get_tuple_count();
+            auto tuples_left_on_page = ManagedSlottedPage<T>::get_max_tuples(page_size) - index;
+            if (tuples_left_on_page == 0) {
+                pages[partition].emplace_back(page_size);
+            } else {
+                tuples_left = num_tuples - std::min(tuples_left_on_page, num_tuples);
+                auto const tuples_to_write = num_tuples - tuples_left;
+                current_page.increase_tuple_count(tuples_to_write);
+                current_page.add_tuple_batch_with_index(buffer, index, tuples_to_write);
+            }
         }
-        auto const tuples_left = num_tuples - std::min(tuples_left_on_page, num_tuples);
-        auto const tuples_to_write = num_tuples - tuples_left;
-        current_page.increase_tuple_count(tuples_to_write);
-        current_page.add_tuple_batch_with_index(buffer, index, tuples_to_write);
-        lock.unlock();
 
         if (tuples_left > 0) {
             insert_buffer_of_tuples_batched(buffer + num_tuples - tuples_left, tuples_left, partition);
