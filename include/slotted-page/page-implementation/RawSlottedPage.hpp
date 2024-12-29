@@ -36,7 +36,7 @@ public:
           page_data(std::move(other.page_data)),
           header(reinterpret_cast<HeaderInfoAtomic *>(page_data.get())),
           slots(reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic))),
-          data_section(reinterpret_cast<T *>(page_data.get() + page_size - max_tuples * T::get_size_of_variable_data())),
+          data_section(reinterpret_cast<T *>(page_data.get() + page_size - other.max_tuples * T::get_size_of_variable_data())),
           max_tuples(other.max_tuples) {
     }
 

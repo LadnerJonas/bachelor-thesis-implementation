@@ -3,32 +3,40 @@
 #include "hybrid/chunk-creation/ChunkCreator.hpp"
 #include "hybrid/worker/request_and_process_chunk.hpp"
 #include "slotted-page/page-manager/HybridPageManager.hpp"
+
 #include <thread>
+#include <vector>
+#include <deque>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class HybridOrchestrator {
-    ChunkCreator<T> chunk_creator;
     HybridPageManager<T, partitions, page_size> page_manager;
-    size_t num_threads;
     size_t num_tuples;
+    size_t num_threads;
 
 public:
-    explicit HybridOrchestrator(size_t num_tuples, size_t num_threads)
-        : chunk_creator(num_tuples), page_manager(num_threads), num_threads(num_threads), num_tuples(num_tuples) {
+    explicit HybridOrchestrator(const size_t num_tuples, const size_t num_threads)
+        : page_manager(num_threads), num_tuples(num_tuples), num_threads(num_threads) {
     }
 
     void run() {
-        std::vector<std::jthread> threads;
+        std::vector<std::thread> threads;
         threads.reserve(num_threads);
+
+        std::deque<BatchedTupleGenerator<T, 10 * 2048>> generators;
         for (size_t i = 0; i < num_threads; ++i) {
-            size_t chunk_size = (num_tuples + num_threads - 1) / num_threads;
-            //handle remainder
-            if (const size_t remainder = num_tuples % num_threads; i < remainder) {
-                ++chunk_size;
-            }
-            threads.emplace_back([this, chunk_size] {
-                request_and_process_chunk<T, partitions>(page_manager, chunk_creator, chunk_size);
+            const auto tuple_to_generate = num_tuples / num_threads + (i < num_tuples % num_threads);
+            generators.emplace_back(tuple_to_generate);
+
+            threads.emplace_back([this, i, &generators] {
+                request_and_process_chunk<T, partitions>(page_manager, generators[i]);
             });
+        }
+
+        for (auto &thread: threads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
         }
     }
     std::vector<size_t> get_written_tuples_per_partition() {

@@ -39,13 +39,8 @@ void handle_sub_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
     }
 }
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager,
-                               ChunkCreator<T> &chunk_creator, size_t proposed_chunk_size) {
-    constexpr auto sub_chunks = 4u;
-    const auto sub_chunk_size = (proposed_chunk_size + sub_chunks - 1) / sub_chunks;
-    for (size_t i = 0; i < sub_chunks; ++i) {
-        const auto current_chunk_size = std::min(sub_chunk_size, proposed_chunk_size - i * sub_chunk_size);
-        auto [chunk, chunk_size] = chunk_creator.getChunkOfTuples(current_chunk_size);
-        handle_sub_chunk<T, partitions, page_size>(page_manager, chunk, chunk_size);//time_start
+void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager, BatchedTupleGenerator<T, 10 * 2048> &tuple_generator) {
+    for (auto [chunk, chunk_size] = tuple_generator.getBatchOfTuples(); chunk; std::tie(chunk, chunk_size) = tuple_generator.getBatchOfTuples()) {
+        handle_sub_chunk(page_manager, chunk, chunk_size);
     }
 }

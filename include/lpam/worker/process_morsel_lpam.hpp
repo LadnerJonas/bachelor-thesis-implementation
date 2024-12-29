@@ -2,18 +2,20 @@
 
 #include "slotted-page/page-implementation/ManagedSlottedPage.hpp"
 #include "slotted-page/page-manager/LocalPagesAndMergePageManager.hpp"
+#include "tuple-generator/BatchedTupleGenerator.hpp"
 #include "util/partitioning_function.hpp"
+
 #include <vector>
 
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
-void process_morsel_lpam(MorselCreator<T> &morsel_creator, LocalPagesAndMergePageManager<T, partitions, page_size> &page_manager) {
+void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAndMergePageManager<T, partitions, page_size> &page_manager) {
     std::vector<std::vector<ManagedSlottedPage<T>>> thread_local_pages(partitions);
     for (unsigned i = 0; i < partitions; ++i) {
         thread_local_pages[i].emplace_back(page_size);
     }
 
-    for (auto [batch, batch_size] = morsel_creator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = morsel_creator.getBatchOfTuples()) {
+    for (auto [batch, batch_size] = tuple_generator.getBatchOfTuples(); batch; std::tie(batch, batch_size) = tuple_generator.getBatchOfTuples()) {
         for (size_t i = 0; i < batch_size; ++i) {
             const auto &tuple = batch[i];
             const auto partition = partition_function<T, partitions>(tuple);

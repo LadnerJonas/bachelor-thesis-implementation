@@ -12,20 +12,29 @@ class RadixOrchestrator {
     size_t num_tuples;
 
 public:
-    explicit RadixOrchestrator(size_t num_tuples, size_t num_threads) : materialization(num_tuples), page_manager(num_threads), num_threads(num_threads), num_tuples(num_tuples) {
+    explicit RadixOrchestrator(const size_t num_tuples, const size_t num_threads) : materialization(num_tuples, num_threads), page_manager(num_threads), num_threads(num_threads), num_tuples(num_tuples) {
     }
 
     void run() {
         materialization.materialize();
         const auto data = materialization.get_data();
-        std::vector<std::jthread> threads;
+        std::vector<std::thread> threads;
         threads.reserve(num_threads);
+
+        auto current_index = 0;
         for (size_t i = 0; i < num_threads; ++i) {
-            const size_t chunk_size = (num_tuples + num_threads - 1) / num_threads;
+            const size_t chunk_size = num_tuples / num_threads + (i < num_tuples % num_threads);
             const auto raw_pointer = data.get();
-            threads.emplace_back([this, raw_pointer, i, chunk_size]() {
-                process_radix_chunk<T, partitions>(page_manager, raw_pointer + i * chunk_size, chunk_size);
+            threads.emplace_back([this, raw_pointer, current_index, chunk_size]() {
+                process_radix_chunk<T, partitions>(page_manager, raw_pointer + current_index, chunk_size);
             });
+            current_index += chunk_size;
+        }
+
+        for (auto &thread: threads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
         }
     }
 

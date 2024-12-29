@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdlib>
+#include <immintrin.h>
+
 template<typename T, size_t num_partitions>
 size_t partition_function(const T &entry) {
     constexpr static size_t mask = num_partitions - 1;

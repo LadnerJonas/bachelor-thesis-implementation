@@ -28,7 +28,7 @@ public:
     Tuple4(const KeyType key, const std::array<uint32_t, 0> &) : BenchmarkTuple(key) {}
     Tuple4(const Tuple4 &other) = default;
     Tuple4 &operator=(const Tuple4 &other) = default;
-    [[nodiscard]] static const auto get_variable_data() -> int {
+    [[nodiscard]] static auto get_variable_data() -> int {
         return 0;
     }
     constexpr static auto get_size_of_variable_data() {
@@ -48,7 +48,7 @@ public:
     Tuple16(const Tuple16 &other) = default;
     Tuple16 &operator=(const Tuple16 &other) = default;
 
-    [[nodiscard]] const auto get_variable_data() const -> const std::array<uint32_t, 3> & {
+    [[nodiscard]] auto get_variable_data() const -> const std::array<uint32_t, 3> & {
         return data;
     }
     constexpr static unsigned get_size_of_variable_data() {
@@ -69,7 +69,7 @@ public:
     Tuple100(const Tuple100 &other) = default;
     Tuple100 &operator=(const Tuple100 &other) = default;
 
-    [[nodiscard]] const auto get_variable_data() const -> const std::array<uint32_t, 24> & {
+    [[nodiscard]] auto get_variable_data() const -> const std::array<uint32_t, 24> & {
         return data;
     }
     constexpr static unsigned get_size_of_variable_data() {
