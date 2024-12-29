@@ -51,7 +51,7 @@ void test_radix_selectiv_orchestrator(size_t num_tuples) {
     std::cout << "Running selectiv radix orchestrator" << std::endl;
     auto time_start = std::chrono::high_resolution_clock::now();
 
-    RadixSelectiveOrchestrator<Tt, PARTITIONS, PAGE_SIZE> orchestrator(num_tuples, THREADS);
+    RadixSelectiveOrchestrator<Tt, PARTITIONS, PAGE_SIZE, 128> orchestrator(num_tuples, THREADS);
     orchestrator.run();
     auto written_tuples = orchestrator.get_written_tuples_per_partition();
     auto time_end = std::chrono::high_resolution_clock::now();

@@ -85,7 +85,7 @@ void benchmark_RadixSelectiveOrchestrator(const unsigned tuples_to_generate_base
                 {
                     PerfEventBlock e(1'000'000, params, tuples_to_generate == static_cast<unsigned>(static_cast<double>(tuples_to_generate_base) * tuple_count_factor) && threads == 1);
 
-                    RadixSelectiveOrchestrator<T, partition, k> orchestrator(tuples_to_generate, threads);
+                    RadixSelectiveOrchestrator<T, partition, 5 * 1024 * 1024, k> orchestrator(tuples_to_generate, threads);
                     orchestrator.run();
 
                     // Verify the result
