@@ -5,7 +5,7 @@
 
 template<typename T, size_t batch_size>
 void benchmark_materialization(size_t tuples_to_generate) {
-    ContinuousMaterialization<T, batch_size> materialization(tuples_to_generate);
+    ContinuousMaterialization<T, batch_size> materialization(tuples_to_generate, 1);
     materialization.materialize();
     auto data = materialization.get_data();
     if (data == nullptr) {
