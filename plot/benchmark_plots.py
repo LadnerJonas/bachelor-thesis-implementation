@@ -198,7 +198,7 @@ def plot_combined_data(df, path, grouping_column="tuple_size-Partitions"):
         with_baseline=False,
     )
     generate_combined_images_time(
-        df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=True
+        df, path, grouping_column, "Time", "time_sec", "sec", with_baseline=False
     )
     generate_combined_images(
         df, path, grouping_column, "Instructions", "instructions", "1 Mio"
@@ -372,7 +372,7 @@ def generate_combined_images_time(
                     annotations.append((x, y))
                     list_of_thread.add(int(x))
 
-        # annotate_with_padding(ax, annotations, y_scale)
+        annotate_with_padding(ax, annotations, y_scale)
         max_thread_count = max(list_of_thread)
         for i in range(2, max_thread_count, 2):
             list_of_thread.add(i)
