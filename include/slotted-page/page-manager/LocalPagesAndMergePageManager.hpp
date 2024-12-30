@@ -1,12 +1,13 @@
 #pragma once
 #include "slotted-page/page-implementation/ManagedSlottedPage.hpp"
-#include <atomic>
 #include "util/padded/PaddedMutex.hpp"
+#include <algorithm>
 #include <array>
+#include <atomic>
 #include <barrier>
 #include <mutex>
+#include <ranges>
 #include <vector>
-#include <algorithm>
 
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
@@ -60,7 +61,7 @@ public:
 
     void sort_and_prepare_pages() {
         for (size_t partition = 0; partition < partitions; ++partition) {
-             std::ranges::sort(pages[partition].begin(), pages[partition].end(), [](const ManagedSlottedPage<T> &a, const ManagedSlottedPage<T> &b) {
+            std::ranges::sort(pages[partition], [](const ManagedSlottedPage<T> &a, const ManagedSlottedPage<T> &b) {
                 return a.get_tuple_count() < b.get_tuple_count();
             });
             auto first_non_full_page = std::find_if(pages[partition].begin(), pages[partition].end(), [](const ManagedSlottedPage<T> &page) {

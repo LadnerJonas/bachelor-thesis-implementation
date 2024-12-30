@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 #include "slotted-page/page-implementation/HeaderInfo.hpp"
@@ -10,81 +10,30 @@
 
 template<typename T>
 class ManagedSlottedPage {
+    std::unique_ptr<uint8_t[]> page_data;
     size_t page_size;
-    uint8_t *page_data;
+    size_t max_tuples;
     HeaderInfoNonAtomic *header;
     SlotInfo<T> *slots;
     T *data_section;
-    size_t max_tuples;
-    bool has_to_be_freed = true;
 
 public:
-    explicit ManagedSlottedPage(size_t page_size)
-        : page_size(page_size) {
-        // Compute max possible tuples based on page_data size and tuple/slot size
-        max_tuples = get_max_tuples(page_size);
-        page_data = new uint8_t[page_size];
+    explicit ManagedSlottedPage(const size_t page_size)
+        : page_data(std::make_unique<uint8_t[]>(page_size)), page_size(page_size), max_tuples(get_max_tuples(page_size)) {
 
-        // Set up header, slots, and data pointers within the page_data
-        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data);
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic));
-        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
+        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data.get());
+        slots = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoAtomic));
+        data_section = reinterpret_cast<T *>(page_data.get() + page_size - get_max_tuples(page_size) * sizeof(T));
 
-        // Initialize header values
         header->tuple_count = 0;
     }
 
-    ManagedSlottedPage(size_t page_size, uint8_t *page_data)
-        : page_size(page_size), page_data(page_data), has_to_be_freed(false) {
-        // Compute max possible tuples based on page_data size and tuple/slot size
-        max_tuples = get_max_tuples(page_size);
-
-        // Set up header, slots, and data pointers within the page_data
-        header = reinterpret_cast<HeaderInfoNonAtomic *>(page_data);
-        slots = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic));
-        data_section = reinterpret_cast<T *>(page_data + page_size - max_tuples * sizeof(T));
-        // Initialize header values
-        header->tuple_count = 0;
-    }
-
-    ~ManagedSlottedPage() {
-        if (has_to_be_freed && page_data != nullptr) {
-            delete[] page_data;
-        }
-    }
-
-    ManagedSlottedPage(ManagedSlottedPage &&other) noexcept
-        : page_size(other.page_size),
-          page_data(std::exchange(other.page_data, nullptr)),
-          header(std::exchange(other.header, nullptr)),
-          slots(std::exchange(other.slots, nullptr)),
-          data_section(std::exchange(other.data_section, nullptr)),
-          max_tuples(other.max_tuples),
-          has_to_be_freed(std::exchange(other.has_to_be_freed, false)) {}
-
-    ManagedSlottedPage &operator=(ManagedSlottedPage &&other) noexcept {
-        if (this != &other) {// Protect against self-assignment
-            // Clean up existing resources if necessary
-            if (has_to_be_freed && page_data != nullptr) {
-                delete[] page_data;// Assuming page_data is dynamically allocated
-            }
-
-            // Transfer the ownership of resources from `other` to this instance
-            page_size = other.page_size;
-            page_data = std::exchange(other.page_data, nullptr);
-            header = std::exchange(other.header, nullptr);
-            slots = std::exchange(other.slots, nullptr);
-            data_section = std::exchange(other.data_section, nullptr);
-            max_tuples = other.max_tuples;
-            has_to_be_freed = std::exchange(other.has_to_be_freed, false);
-
-            // Any additional logic to transfer state or reset `other`
-        }
-        return *this;
-    }
     //copy constructor delete
     ManagedSlottedPage(const ManagedSlottedPage &other) = delete;
     ManagedSlottedPage &operator=(const ManagedSlottedPage &) = delete;
+
+    ManagedSlottedPage(ManagedSlottedPage &&other) = default;
+    ManagedSlottedPage &operator=(ManagedSlottedPage &&) = default;
 
     bool add_tuple(const T &tuple) {
         if (header->tuple_count == max_tuples) {
@@ -94,11 +43,11 @@ public:
         if constexpr (T::get_size_of_variable_data() > 0) {
             //store tuple starting from the end of the page_data
             tuple_offset_from_end = page_size - (header->tuple_count + 1) * T::get_size_of_variable_data();
-            auto tuple_start = page_data + tuple_offset_from_end;
+            auto tuple_start = page_data.get() + tuple_offset_from_end;
             std::memcpy(tuple_start, &tuple.get_variable_data(), T::get_size_of_variable_data());
         }
         //store slot
-        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + header->tuple_count * sizeof(SlotInfo<T>));
+        auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoNonAtomic) + header->tuple_count * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>{tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key()};
 
         // Increase tuple count
@@ -111,11 +60,11 @@ public:
         if constexpr (T::get_size_of_variable_data() > 0) {
             first_tuple_offset_from_end = page_size - (index + 1) * T::get_size_of_variable_data();
             for (unsigned i = 0; i < tuples_to_write; i++) {
-                auto tuple_start = page_data + first_tuple_offset_from_end - i * T::get_size_of_variable_data();
+                auto tuple_start = page_data.get() + first_tuple_offset_from_end - i * T::get_size_of_variable_data();
                 std::memcpy(tuple_start, &buffer[i].get_variable_data(), T::get_size_of_variable_data());
             }
         }
-        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data + sizeof(HeaderInfoNonAtomic) + index * sizeof(SlotInfo<T>));
+        const auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoNonAtomic) + index * sizeof(SlotInfo<T>));
         for (unsigned i = 0; i < tuples_to_write; i++) {
             new (slot_start + i) SlotInfo<T>{first_tuple_offset_from_end - i * T::get_size_of_variable_data(), T::get_size_of_variable_data(), buffer[i].get_key()};
         }
@@ -135,7 +84,7 @@ public:
                 if constexpr (T::get_size_of_variable_data() > 0) {
                     auto offset_from_page_start = slots[i].offset;
                     std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
-                    std::memcpy(tuple_data.data(), page_data + offset_from_page_start, T::get_size_of_variable_data());
+                    std::memcpy(tuple_data.data(), page_data.get() + offset_from_page_start, T::get_size_of_variable_data());
                     T tuple(key, tuple_data);
                     return tuple;
                 }
@@ -152,7 +101,7 @@ public:
             if constexpr (T::get_size_of_variable_data() > 0) {
                 auto offset_from_page_start = slots[i].offset;
                 std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
-                std::memcpy(tuple_data.data(), page_data + offset_from_page_start, T::get_size_of_variable_data());
+                std::memcpy(tuple_data.data(), page_data.get() + offset_from_page_start, T::get_size_of_variable_data());
                 T tuple(slots[i].key, tuple_data);
                 all_tuples.emplace_back(tuple);
             } else {
@@ -163,7 +112,7 @@ public:
         return all_tuples;
     }
 
-    size_t get_tuple_count() const {
+    [[nodiscard]] size_t get_tuple_count() const {
         return header->tuple_count;
     }
 
