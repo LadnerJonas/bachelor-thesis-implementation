@@ -1,3 +1,4 @@
+#include "slotted-page/page-implementation/SlotInfo.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 #include "tuple-types/tuple-types.hpp"
 
@@ -21,12 +22,12 @@ public:
         write_out_locations.emplace_back(std::make_unique<T[]>(block_size));
     }
     void run() {
-        while (running) {
+        while (running.load()) {
             auto [ptr, size_of_batch] = generator.getBatchOfTuples();
             if (ptr == nullptr) {
                 break;
             }
-            for (size_t i = 0; i < size_of_batch && running; i++) {
+            for (size_t i = 0; i < size_of_batch && running.load(); i++) {
                 write_out_locations.back()[index_within_block++] = ptr[i];
                 if (index_within_block == block_size) {
                     write_out_locations.emplace_back(std::make_unique<T[]>(block_size));
@@ -38,7 +39,7 @@ public:
     }
 
     void stop() {
-        running = false;
+        running.store(false);
     }
 
     [[nodiscard]] size_t get_written_tuples() const {
@@ -47,7 +48,7 @@ public:
 };
 
 template<typename TupleType>
-void benchmark_write_out(const std::chrono::milliseconds time_to_write_out, const size_t block_size) {
+void benchmark_non_synchronised_write_out(const std::chrono::milliseconds time_to_write_out, const size_t block_size) {
     for (unsigned threads = 1; threads <= std::thread::hardware_concurrency(); threads *= 2) {
         std::vector<std::jthread> threads_vector;
         std::deque<Orchestrator<TupleType>> orchestrators;
@@ -74,10 +75,10 @@ void benchmark_write_out(const std::chrono::milliseconds time_to_write_out, cons
         for (auto &orchestrator: orchestrators) {
             written_tuples += orchestrator.get_written_tuples();
         }
-        std::cout << "Using " << threads << " Threads: "
+        std::cout << "Using " << threads << " Thread(s): "
                   << "written " << sizeof(TupleType) << "B tuples: " << std::fixed << std::setprecision(2) << written_tuples / 1e6 << " Mio"
-                  << " (" << static_cast<double>(sizeof(TupleType)) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
-                                                                                                                     ", avg: "
+                  << " (" << static_cast<double>(sizeof(SlotInfo<TupleType>) * TupleType::get_size_of_variable_data()) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
+                                                                                                                                                                        ", avg: "
                   << static_cast<double>(written_tuples) / (threads * 1e6) << " Mio/thread)"
                   << " within " << time_to_write_out.count() << " ms" << std::endl;
         if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
@@ -90,7 +91,7 @@ int main() {
     constexpr auto time_to_write_out = std::chrono::milliseconds(1000);
     constexpr size_t block_size = 5 * 1024 * 1024;
 
-    benchmark_write_out<Tuple4>(time_to_write_out, block_size / 4);
-    benchmark_write_out<Tuple16>(time_to_write_out, block_size / 16);
-    benchmark_write_out<Tuple100>(time_to_write_out, block_size / 100);
+    benchmark_non_synchronised_write_out<Tuple4>(time_to_write_out, block_size / 4);
+    benchmark_non_synchronised_write_out<Tuple16>(time_to_write_out, block_size / 16);
+    benchmark_non_synchronised_write_out<Tuple100>(time_to_write_out, block_size / 100);
 }
