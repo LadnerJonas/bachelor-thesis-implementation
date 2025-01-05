@@ -14,16 +14,16 @@ template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LocalPagesAndMergePageManager {
     std::array<std::vector<ManagedSlottedPage<T>>, partitions> pages;
     std::array<std::vector<ManagedSlottedPage<T>>, partitions> pages_to_merge;
-    unsigned num_threads;
     std::barrier<> thread_barrier;
     std::once_flag distribute_flag;
     PaddedMutex page_mutex;
-    std::atomic<unsigned> thread_chunk_released = 0;
+    PaddedAtomic<unsigned> thread_chunk_released = PaddedAtomic<unsigned>(0);
+    const unsigned num_threads;
     const unsigned total_partitions_per_thread = partitions / num_threads;
     const unsigned total_partitions_per_thread_remainder = partitions % num_threads;
 
 public:
-    explicit LocalPagesAndMergePageManager(const unsigned num_threads) : num_threads(num_threads), thread_barrier(num_threads) {}
+    explicit LocalPagesAndMergePageManager(const unsigned num_threads) : thread_barrier(num_threads), num_threads(num_threads) {}
 
 
     std::vector<std::vector<ManagedSlottedPage<T>>> hand_in_thread_local_pages(std::vector<std::vector<ManagedSlottedPage<T>>> &thread_local_pages) {
@@ -43,7 +43,7 @@ public:
             sort_and_prepare_pages();
         });
 
-        const auto thread_chunk = thread_chunk_released.fetch_add(1);
+        const unsigned thread_chunk = thread_chunk_released.fetch_add(1);
         const auto start_partition = thread_chunk * total_partitions_per_thread + std::min(thread_chunk, total_partitions_per_thread_remainder);
         const auto end_partition = start_partition + total_partitions_per_thread + (thread_chunk < total_partitions_per_thread_remainder ? 1 : 0);
         std::vector<std::vector<ManagedSlottedPage<T>>> thread_pages_to_merge(partitions);

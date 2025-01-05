@@ -15,7 +15,7 @@ class LocalPagesAndMergeOrchestrator {
     size_t num_threads;
 
 public:
-    explicit LocalPagesAndMergeOrchestrator(size_t num_tuples, size_t num_threads) : page_manager(num_threads), num_tuples(num_tuples), num_threads(num_threads) {
+    explicit LocalPagesAndMergeOrchestrator(const size_t num_tuples, const size_t num_threads) : page_manager(num_threads), num_tuples(num_tuples), num_threads(num_threads) {
     }
 
     void run() {

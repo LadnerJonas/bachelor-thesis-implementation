@@ -16,9 +16,9 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class HybridPageManager {
-    size_t tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
     std::array<PartitionData<T>, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
+    const size_t tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
     std::barrier<> thread_barrier;
     std::mutex global_histogram_mutex;
 

@@ -34,12 +34,13 @@ __m128i partition_function_simd(const T *entry) {
             const __m128i mask_vector = _mm_set1_epi32(mask);
             return _mm_and_si128(keys, mask_vector);
         } else {
-            __m128i keys = {};
+            alignas(16) std::array<int, 4> keys{};
             for (int i = 0; i < 4; ++i) {
                 keys[i] = entry[i].get_key();
             }
-            const __m128i mask_vector = _mm_set1_epi32(mask);
-            return _mm_and_si128(keys, mask_vector);
+            const __m128i keys_vector = _mm_loadu_si128(reinterpret_cast<const __m128i *>(keys.data()));
+            const __m128i mask_vector = _mm_set1_epi32(static_cast<int>(mask));
+            return _mm_and_si128(keys_vector, mask_vector);
         }
     }
 
