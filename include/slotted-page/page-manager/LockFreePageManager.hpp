@@ -64,4 +64,15 @@ public:
         }
         return result;
     }
+
+    std::vector<std::vector<T>> get_all_tuples_per_partition() {
+        std::vector<std::vector<T>> result(partitions);
+        for (size_t i = 0; i < partitions; ++i) {
+            for (const auto &page: pages[i]) {
+                auto tuples = page->get_all_tuples();
+                result[i].insert(result[i].end(), tuples.begin(), tuples.end());
+            }
+        }
+        return result;
+    }
 };

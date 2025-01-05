@@ -74,7 +74,7 @@ public:
         header->tuple_count += count;
     }
 
-    static size_t get_max_tuples(const size_t page_size) {
+    constexpr static size_t get_max_tuples(const size_t page_size) {
         return (page_size - sizeof(HeaderInfoNonAtomic)) / (T::get_size_of_variable_data() + sizeof(SlotInfo<T>));
     }
 
