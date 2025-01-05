@@ -1,9 +1,11 @@
 #pragma once
+
 #include "slotted-page/page-implementation/ManagedSlottedPage.hpp"
+#include "util/padded/PaddedAtomic.hpp"
 #include "util/padded/PaddedMutex.hpp"
+
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <barrier>
 #include <mutex>
 #include <ranges>
@@ -26,7 +28,7 @@ public:
     explicit LocalPagesAndMergePageManager(const unsigned num_threads) : thread_barrier(num_threads), num_threads(num_threads) {}
 
 
-    std::vector<std::vector<ManagedSlottedPage<T>>> hand_in_thread_local_pages(std::vector<std::vector<ManagedSlottedPage<T>>> &thread_local_pages) {
+    std::vector<std::vector<ManagedSlottedPage<T>>> hand_in_thread_local_pages(std::array<std::vector<ManagedSlottedPage<T>>, partitions> &thread_local_pages) {
         {
             std::lock_guard lock(page_mutex.mutex);
             for (size_t partition = 0; partition < partitions; ++partition) {

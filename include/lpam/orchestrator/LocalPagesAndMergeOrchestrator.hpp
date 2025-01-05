@@ -4,9 +4,9 @@
 #include "slotted-page/page-manager/LocalPagesAndMergePageManager.hpp"
 #include "tuple-generator/BatchedTupleGenerator.hpp"
 
+#include <deque>
 #include <thread>
 #include <vector>
-#include <deque>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class LocalPagesAndMergeOrchestrator {
@@ -26,8 +26,9 @@ public:
         for (unsigned i = 0; i < num_threads; i++) {
             const auto tuple_to_generate = num_tuples / num_threads + (i < num_tuples % num_threads);
             generators.emplace_back(tuple_to_generate);
-            threads.emplace_back([this, i, &generators] {
-                process_morsel_lpam<T, partitions, page_size>(generators[i], page_manager);
+            auto &generator = generators.back();
+            threads.emplace_back([this, &generator] {
+                process_morsel_lpam<T, partitions, page_size>(generator, page_manager);
             });
         }
 

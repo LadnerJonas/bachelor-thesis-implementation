@@ -19,6 +19,7 @@ public:
             pages[partition].back().add_tuple(tuple);
         }
     }
+
     void insert_buffer_of_tuples_batched(const T *buffer, const size_t num_tuples, const size_t partition) {
         auto &current_page = pages[partition].back();
         const auto index = current_page.get_tuple_count();
@@ -37,6 +38,11 @@ public:
             insert_buffer_of_tuples_batched(buffer + num_tuples - tuples_left, tuples_left, partition);
         }
     }
+
+    std::array<std::vector<ManagedSlottedPage<T>>, partitions> &get_all_pages() {
+        return pages;
+    }
+
 
     std::vector<size_t> get_written_tuples_per_partition() {
         std::vector<size_t> result(partitions, 0);
