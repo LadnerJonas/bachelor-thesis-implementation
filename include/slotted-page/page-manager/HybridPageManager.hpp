@@ -36,9 +36,9 @@ public:
         }
     }
 
-    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
+    std::array<std::vector<PageWriteInfo<T>>, partitions> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
         std::lock_guard lock(global_histogram_mutex);
-        std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
+        std::array<std::vector<PageWriteInfo<T>>, partitions> thread_write_info;
 
         for (size_t partition = 0; partition < partitions; ++partition) {
             size_t tuples_to_write = local_histogram[partition];

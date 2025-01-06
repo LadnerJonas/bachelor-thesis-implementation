@@ -4,9 +4,9 @@
 #include "hybrid/worker/request_and_process_chunk.hpp"
 #include "slotted-page/page-manager/HybridPageManager.hpp"
 
+#include <deque>
 #include <thread>
 #include <vector>
-#include <deque>
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class HybridOrchestrator {
@@ -27,9 +27,10 @@ public:
         for (size_t i = 0; i < num_threads; ++i) {
             const auto tuple_to_generate = num_tuples / num_threads + (i < num_tuples % num_threads);
             generators.emplace_back(tuple_to_generate);
+            auto &generator = generators.back();
 
-            threads.emplace_back([this, i, &generators] {
-                request_and_process_chunk<T, partitions>(page_manager, generators[i]);
+            threads.emplace_back([this, &generator] {
+                request_and_process_chunk<T, partitions>(page_manager, generator, num_threads);
             });
         }
 
