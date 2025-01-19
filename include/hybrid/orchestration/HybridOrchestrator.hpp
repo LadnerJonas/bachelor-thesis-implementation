@@ -16,14 +16,13 @@ class HybridOrchestrator {
 
 public:
     explicit HybridOrchestrator(const size_t num_tuples, const size_t num_threads)
-        : page_manager(num_threads), num_tuples(num_tuples), num_threads(num_threads) {
+        : page_manager(), num_tuples(num_tuples), num_threads(num_threads) {
     }
 
     void run() {
-        std::vector<std::thread> threads;
-        threads.reserve(num_threads);
-
         std::deque<BatchedTupleGenerator<T, 10 * 2048>> generators;
+        std::vector<std::jthread> threads;
+
         for (size_t i = 0; i < num_threads; ++i) {
             const auto tuple_to_generate = num_tuples / num_threads + (i < num_tuples % num_threads);
             generators.emplace_back(tuple_to_generate);
@@ -32,12 +31,6 @@ public:
             threads.emplace_back([this, &generator] {
                 request_and_process_chunk<T, partitions>(page_manager, generator, num_threads);
             });
-        }
-
-        for (auto &thread: threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
         }
     }
     std::vector<size_t> get_written_tuples_per_partition() {
