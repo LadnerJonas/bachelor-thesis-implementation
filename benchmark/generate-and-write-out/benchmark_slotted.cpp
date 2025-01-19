@@ -12,9 +12,9 @@
 #include <thread>
 #include <vector>
 
-bool hasMoreThan500GBOfRAM() {
+bool hasMoreThan100GiBOfRAM() {
     constexpr uint64_t GB = 1024ULL * 1024 * 1024;
-    constexpr uint64_t MEMORY_THRESHOLD = 500 * GB;
+    constexpr uint64_t MEMORY_THRESHOLD = 100 * GB;
     std::ifstream meminfo("/proc/meminfo");
     if (!meminfo) {
         std::cerr << "Could not open /proc/meminfo" << std::endl;
@@ -233,7 +233,7 @@ int main() {
     benchmark_non_synchronised_write_out<Tuple16, 32>(time_to_write_out);
     benchmark_non_synchronised_write_out<Tuple100, 32>(time_to_write_out);
 
-    if (hasMoreThan500GBOfRAM()) {
+    if (hasMoreThan100GiBOfRAM()) {
         benchmark_non_synchronised_write_out<Tuple4, 1024>(time_to_write_out);
         benchmark_non_synchronised_write_out<Tuple16, 1024>(time_to_write_out);
         benchmark_non_synchronised_write_out<Tuple100, 1024>(time_to_write_out);
@@ -243,7 +243,7 @@ int main() {
     benchmark_synchronised_write_out<Tuple16, 32>(time_to_write_out);
     benchmark_synchronised_write_out<Tuple100, 32>(time_to_write_out);
 
-    if (hasMoreThan500GBOfRAM()) {
+    if (hasMoreThan100GiBOfRAM()) {
         benchmark_synchronised_write_out<Tuple4, 1024>(time_to_write_out);
         benchmark_synchronised_write_out<Tuple16, 1024>(time_to_write_out);
         benchmark_synchronised_write_out<Tuple100, 1024>(time_to_write_out);
