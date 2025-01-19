@@ -4,6 +4,7 @@ import locale
 import matplotlib.pyplot as plt
 import pandas as pd
 from adjustText import adjust_text
+import re
 
 locale.setlocale(locale.LC_ALL, "de_DE.UTF-8")  # Set locale to a European format
 
@@ -134,6 +135,8 @@ def load_data(file_path):
     df = pd.DataFrame(data, columns=columns)
     numeric_cols = columns[1:-1]
     df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
+
+    df = df.sort_values(by=["tuple_size", "Partitions", "Threads"], ascending=True)
     return df
 
 
@@ -270,7 +273,7 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
         # Configure subplot
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
         ax.set_title(
-            f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)",
+            f"Combined - {grouping_column} {group_value} ({df_group['GB'].min()} GB)",
             fontsize=14,
         )
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
@@ -382,7 +385,7 @@ def generate_combined_images_time(
         # Configure subplot
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
         ax.set_title(
-            f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)",
+            f"Combined - {grouping_column} {group_value} ({df_group['GB'].min()} GB)",
             fontsize=14,
         )
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
@@ -498,15 +501,52 @@ def generate_combined_images_tuples_per_second(
 
         # annotate_with_padding(ax, annotations, y_scale)
         max_thread_count = max(list_of_thread)
+        list_of_thread_backup = sorted(list(set(list_of_thread)))
         for i in range(2, max_thread_count, 2):
             list_of_thread.add(i)
 
         list_of_thread = list(list_of_thread)
 
+        theoretical_max_speed_df = pd.read_json(
+            f"plot/{args.source}-theoretical-slotted-page.json", orient="records"
+        )
+        match = re.match(r"Tuple(\d+)-(\d+)", group_value)
+        tuple_size, partitions = map(int, match.groups())
+
+        query_result = theoretical_max_speed_df[
+            (theoretical_max_speed_df["synchronised"] == 0)  # 0 means not-synchronised
+            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
+            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
+        ]
+        print(list_of_thread_backup)
+        print(list(query_result["written_tuples"].values))
+        ax.plot(
+            list_of_thread_backup,
+            list(query_result["written_tuples"].values),
+            marker="o",
+            color="gray",
+            linestyle="--",
+            label="Theoretical Max Speed un-synchronised",
+        )
+        query_result = theoretical_max_speed_df[
+            (theoretical_max_speed_df["synchronised"] == 1)  # 0 means not-synchronised
+            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
+            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
+        ]
+        print(query_result["written_tuples"].values)
+        ax.plot(
+            list_of_thread_backup,
+            list(query_result["written_tuples"].values),
+            marker="o",
+            color="black",
+            linestyle="--",
+            label="Theoretical Max Speed synchronised",
+        )
+
         # Configure subplot
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
         ax.set_title(
-            f"Combined - {grouping_column} {group_value} ({df_group["GB"].min()} GB)",
+            f"Combined - {grouping_column} {group_value} ({df_group['GB'].min()} GB)",
             fontsize=14,
         )
         ax.set_ylabel(f"{y_label} ({y_unit})", fontsize=12)
