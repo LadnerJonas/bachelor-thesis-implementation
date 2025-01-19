@@ -98,7 +98,7 @@ void print_benchmark_info(const std::chrono::milliseconds time_to_write_out, uns
               << " (tuple-data: " << static_cast<double>(sizeof(TupleType)) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
               << ", slotted-page-data: " << static_cast<double>(sizeof(SlotInfo<TupleType>) + TupleType::get_size_of_variable_data()) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
               << ", avg: "
-              << static_cast<double>(written_tuples) / (threads * (time_to_write_out.count() / 1e3) * 1e6) << " Mio/thread)"
+              << static_cast<double>(written_tuples) / (threads * (time_to_write_out.count() / 1e3) * 1e6) << " Mio/(thread+sec))"
               << " within " << time_to_write_out.count() << " ms" << std::endl;
 }
 
@@ -143,7 +143,7 @@ class OrchestratorSinglePageManager {
     std::atomic<bool> running = std::atomic(true);
     size_t written_tuples = 0;
     BatchedTupleGenerator<T> generator;
-    OnDemandPageManager<T, partitions>& page_manager;
+    OnDemandPageManager<T, partitions> &page_manager;
     unsigned num_threads;
 
 public:
@@ -227,7 +227,7 @@ void benchmark_synchronised_write_out(const std::chrono::milliseconds time_to_wr
 
 
 int main() {
-    constexpr auto time_to_write_out = std::chrono::milliseconds(2000);
+    constexpr auto time_to_write_out = std::chrono::milliseconds(1000);
 
     benchmark_non_synchronised_write_out<Tuple4, 32>(time_to_write_out);
     benchmark_non_synchronised_write_out<Tuple16, 32>(time_to_write_out);

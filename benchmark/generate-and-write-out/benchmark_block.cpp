@@ -77,8 +77,8 @@ void benchmark_non_synchronised_write_out(const std::chrono::milliseconds time_t
         }
         std::cout << "Using " << threads << " Thread(s): "
                   << "written " << sizeof(TupleType) << "B tuples: " << std::fixed << std::setprecision(2) << written_tuples / 1e6 << " Mio"
-                  << " (" << static_cast<double>(sizeof(SlotInfo<TupleType>) * TupleType::get_size_of_variable_data()) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
-                                                                                                                                                                        ", avg: "
+                  << " (" << static_cast<double>(sizeof(SlotInfo<TupleType>) * std::max(TupleType::get_size_of_variable_data(), 1u)) * written_tuples / (1024.0 * 1024.0 * 1024.0) << " GiB"
+                                                                                                                                                                                      ", avg: "
                   << static_cast<double>(written_tuples) / (threads * 1e6) << " Mio/thread)"
                   << " within " << time_to_write_out.count() << " ms" << std::endl;
         if (threads == 8 && std::thread::hardware_concurrency() >= 20) {
