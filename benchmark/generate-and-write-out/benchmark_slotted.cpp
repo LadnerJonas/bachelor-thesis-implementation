@@ -46,14 +46,14 @@ class OrchestratorWithSeparatePageManagers {
     std::atomic<bool> running = std::atomic(true);
     size_t written_tuples = 0;
     BatchedTupleGenerator<T> generator;
-    OnDemandSingleThreadPageManager<T, partitions> page_manager;
+    OnDemandSingleThreadPageManager<T, partitions> page_manager{};
     unsigned num_threads;
 
 public:
     explicit OrchestratorWithSeparatePageManagers(unsigned num_threads) : generator(SIZE_MAX), num_threads(num_threads) {
     }
     void run() {
-        static constexpr auto total_buffer_size = 4 * 1024;
+        static constexpr auto total_buffer_size = 1024 * 1024;
         static constexpr auto max_tuples_in_buffer = total_buffer_size / sizeof(T);
         auto buffer_index = 0u;
         std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
@@ -65,7 +65,7 @@ public:
                 break;
             }
 
-            for (size_t i = 0; i < size_of_batch && running.load(); i++) {
+            for (size_t i = 0; i < size_of_batch; i++) {
                 const auto &tuple = ptr[i];
                 auto &index = buffer_index;
                 if (index == max_tuples_in_buffer) {
@@ -141,14 +141,14 @@ class OrchestratorSinglePageManager {
     std::atomic<bool> running = std::atomic(true);
     size_t written_tuples = 0;
     BatchedTupleGenerator<T> generator;
-    OnDemandPageManager<T, partitions> &page_manager;
+    OnDemandPageManager<T, partitions> &page_manager{};
     unsigned num_threads;
 
 public:
     explicit OrchestratorSinglePageManager(OnDemandPageManager<T, partitions> &page_manager, unsigned num_threads) : generator(SIZE_MAX), page_manager(page_manager), num_threads(num_threads) {
     }
     void run() {
-        static constexpr auto total_buffer_size = 4 * 1024;
+        static constexpr auto total_buffer_size = 1024 * 1024;
         static constexpr auto max_tuples_in_buffer = total_buffer_size / sizeof(T);
         auto buffer_index = 0u;
         std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
@@ -160,7 +160,7 @@ public:
                 break;
             }
 
-            for (size_t i = 0; i < size_of_batch && running.load(); i++) {
+            for (size_t i = 0; i < size_of_batch; i++) {
                 const auto &tuple = ptr[i];
                 auto &index = buffer_index;
                 if (index == max_tuples_in_buffer) {
