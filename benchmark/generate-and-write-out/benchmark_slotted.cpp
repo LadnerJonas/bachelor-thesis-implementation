@@ -53,10 +53,9 @@ public:
     explicit OrchestratorWithSeparatePageManagers(unsigned num_threads) : generator(SIZE_MAX), num_threads(num_threads) {
     }
     void run() {
-        static constexpr unsigned buffer_base_value = partitions <= 32 ? 512 : 4 * 1024;
-        const static auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * num_threads);
-        const static auto buffer_size_per_partition = total_buffer_size / partitions;
-        std::array<unsigned, partitions> buffer_index = {};
+        static constexpr auto total_buffer_size = 4 * 1024;
+        static constexpr auto max_tuples_in_buffer = total_buffer_size / sizeof(T);
+        auto buffer_index = 0u;
         std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
 
         auto partition = 0ull;
@@ -68,16 +67,15 @@ public:
 
             for (size_t i = 0; i < size_of_batch && running.load(); i++) {
                 const auto &tuple = ptr[i];
-                auto &index = buffer_index[partition];
-                const auto partition_offset = partition * buffer_size_per_partition;
-                if (index == buffer_size_per_partition) {
-                    page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);
+                auto &index = buffer_index;
+                if (index == max_tuples_in_buffer) {
+                    page_manager.insert_buffer_of_tuples_batched(buffer.get(), max_tuples_in_buffer, partition);
                     index = 0;
-                    written_tuples += buffer_size_per_partition;
+                    written_tuples += max_tuples_in_buffer;
+                    partition = (partition + 1) & (partitions - 1);
                 }
-                buffer[partition_offset + index] = tuple;
-                ++buffer_index[partition];
-                partition = (partition + 1) % partitions;
+                buffer[index] = tuple;
+                ++buffer_index;
             }
         }
     }
@@ -150,10 +148,9 @@ public:
     explicit OrchestratorSinglePageManager(OnDemandPageManager<T, partitions> &page_manager, unsigned num_threads) : generator(SIZE_MAX), page_manager(page_manager), num_threads(num_threads) {
     }
     void run() {
-        static constexpr unsigned buffer_base_value = partitions <= 32 ? 512 : 4 * 1024;
-        const static auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * num_threads);
-        const static auto buffer_size_per_partition = total_buffer_size / partitions;
-        std::array<unsigned, partitions> buffer_index = {};
+        static constexpr auto total_buffer_size = 4 * 1024;
+        static constexpr auto max_tuples_in_buffer = total_buffer_size / sizeof(T);
+        auto buffer_index = 0u;
         std::unique_ptr<T[]> buffer = std::make_unique<T[]>(total_buffer_size);
 
         auto partition = 0ull;
@@ -165,16 +162,15 @@ public:
 
             for (size_t i = 0; i < size_of_batch && running.load(); i++) {
                 const auto &tuple = ptr[i];
-                auto &index = buffer_index[partition];
-                const auto partition_offset = partition * buffer_size_per_partition;
-                if (index == buffer_size_per_partition) {
-                    page_manager.insert_buffer_of_tuples_batched(buffer.get() + partition_offset, buffer_size_per_partition, partition);
+                auto &index = buffer_index;
+                if (index == max_tuples_in_buffer) {
+                    page_manager.insert_buffer_of_tuples_batched(buffer.get(), max_tuples_in_buffer, partition);
                     index = 0;
-                    written_tuples += buffer_size_per_partition;
+                    written_tuples += max_tuples_in_buffer;
+                    partition = (partition + 1) & (partitions - 1);
                 }
-                buffer[partition_offset + index] = tuple;
-                ++buffer_index[partition];
-                partition = (partition + 1) % partitions;
+                buffer[index] = tuple;
+                ++buffer_index;
             }
         }
     }
