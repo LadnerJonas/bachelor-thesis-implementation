@@ -49,21 +49,39 @@ void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAn
         if (pages_to_merge_partition.empty()) {
             continue;
         }
+
+        const auto max_tuples_per_page = ManagedSlottedPage<T>::get_max_tuples(page_size);
         unsigned front = 0, back = pages_to_merge_partition.size() - 1;
         while (front < back) {
-            auto &back_page = pages_to_merge_partition[back];
+            const auto &back_page = pages_to_merge_partition[back];
+            const auto back_tuples = back_page.get_all_tuples();
+            auto back_page_index= 0u;
 
-            for (auto back_tuples = back_page.get_all_tuples(); const auto &tuple: back_tuples) {
-                while (!pages_to_merge_partition[front].add_tuple(tuple)) {
+            while (front != back && back_page_index < back_tuples.size()) {
+                auto &front_page = pages_to_merge_partition[front];
+                auto front_index = front_page.get_tuple_count();
+
+                auto possible_tuples = max_tuples_per_page - front_index;
+                auto tuples_to_copy = std::min(possible_tuples, back_tuples.size() - back_page_index);
+
+                front_page.add_tuple_batch_with_index(back_tuples.data() + back_page_index, front_index, tuples_to_copy);
+                front_page.increase_tuple_count(tuples_to_copy);
+
+                back_page_index += tuples_to_copy;
+                if (back_page_index < back_tuples.size()) {
                     ++front;
-                    if (front == back) {
-                        pages_to_merge_partition[front].clear();
-                    }
                 }
             }
+
+            if (front == back && back_page_index < back_tuples.size()) {
+                back_page.clear();
+                back_page.add_tuple_batch_with_index(back_tuples.data() + back_page_index, 0, back_tuples.size() - back_page_index);
+                back_page.increase_tuple_count(back_tuples.size() - back_page_index);
+                break;
+            }
             --back;
+            thread_pages_to_merge[partition].pop_back();
         }
-        thread_pages_to_merge[partition].erase(thread_pages_to_merge[partition].begin() + front + 1, thread_pages_to_merge[partition].end());
     }
     page_manager.hand_in_merged_pages(thread_pages_to_merge);
 }
