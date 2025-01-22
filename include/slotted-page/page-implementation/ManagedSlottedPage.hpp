@@ -97,16 +97,15 @@ public:
 
     std::vector<T> get_all_tuples() const {
         std::vector<T> all_tuples;
+        all_tuples.reserve(header->tuple_count);
         for (size_t i = 0; i < header->tuple_count; ++i) {
             if constexpr (T::get_size_of_variable_data() > 0) {
-                auto offset_from_page_start = slots[i].offset;
+                const auto offset_from_page_start = slots[i].offset;
                 std::array<uint32_t, T::get_size_of_variable_data() / sizeof(uint32_t)> tuple_data;
                 std::memcpy(tuple_data.data(), page_data.get() + offset_from_page_start, T::get_size_of_variable_data());
-                T tuple(slots[i].key, tuple_data);
-                all_tuples.emplace_back(tuple);
+                all_tuples.emplace_back(slots[i].key, tuple_data);
             } else {
-                T tuple(slots[i].key);
-                all_tuples.emplace_back(tuple);
+                all_tuples.emplace_back(slots[i].key);
             }
         }
         return all_tuples;
