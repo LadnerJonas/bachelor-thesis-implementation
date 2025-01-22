@@ -5,11 +5,14 @@ FILES=(
     "include/smb/worker/process_morsel_smb_batched.hpp"
     "include/smb/worker/process_morsel_smb_lock_free_batched.hpp"
     "include/cmp/worker/CmpProcessor.hpp"
-    "include/smb/worker/CmpProcessorOfUnit.hpp"
+    "include/cmp/worker/CmpProcessorOfUnit.hpp"
+    "include/hybrid/worker/request_and_process_chunk.hpp"
+    "include/lpam/worker/process_morsel_lpam.hpp"
 )
 
 # Target values in KB and MB
-VALUES=(256 512 1024 2048 4096 8192 16384 32768 65536) # 256KiB to 128MiB
+#256 512 1024
+VALUES=(2048 4096 8192 16384) # 256KiB to 16MiB
 
 # Build and benchmark command
 BUILD_CMD="cmake --build --preset release-build"
@@ -43,7 +46,7 @@ for VALUE in "${VALUES[@]}"; do
 
     # Update buffer size in all files
     for FILE in "${FILES[@]}"; do
-        sed -i "s/total_buffer_size = [0-9]\+ \* 1024/total_buffer_size = ${VALUE} * 1024/g" "$FILE"
+        sed -i "s/buffer_base_value = [0-9]\+/buffer_base_value = ${VALUE}/g" "$FILE"
     done
 
     # Build the project
