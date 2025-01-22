@@ -53,7 +53,7 @@ void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAn
         const auto max_tuples_per_page = ManagedSlottedPage<T>::get_max_tuples(page_size);
         unsigned front = 0, back = pages_to_merge_partition.size() - 1;
         while (front < back) {
-            const auto &back_page = pages_to_merge_partition[back];
+            auto &back_page = pages_to_merge_partition[back];
             const auto back_tuples = back_page.get_all_tuples();
             auto back_page_index= 0u;
 
