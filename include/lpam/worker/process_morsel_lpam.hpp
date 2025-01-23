@@ -10,7 +10,7 @@ template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAndMergePageManager<T, partitions, page_size> &page_manager) {
     OnDemandSingleThreadPageManager<T, partitions, page_size> thread_local_page_manager;
 
-    static constexpr unsigned buffer_base_value = 2048;
+    static constexpr unsigned buffer_base_value = partitions <= 32 ? 512 : 2 * 1024;
     const static auto total_buffer_size = buffer_base_value * 1024 / sizeof(T);
     const static auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};
@@ -55,7 +55,7 @@ void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAn
         while (front < back) {
             auto &back_page = pages_to_merge_partition[back];
             const auto back_tuples = back_page.get_all_tuples();
-            auto back_page_index= 0u;
+            auto back_page_index = 0u;
 
             while (front != back && back_page_index < back_tuples.size()) {
                 auto &front_page = pages_to_merge_partition[front];

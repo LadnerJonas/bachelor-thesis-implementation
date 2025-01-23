@@ -8,7 +8,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 class CmpProcessorOfUnit {
-    static constexpr unsigned buffer_base_value = 2048;
+    static constexpr unsigned buffer_base_value = 4 * 1048;
     unsigned start_partition;
     unsigned end_partition;
     unsigned buffer_size_per_partition;

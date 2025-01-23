@@ -35,7 +35,7 @@ void write_out_buffer_of_partition(T *buffer, std::array<std::vector<PageWriteIn
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page_manager, BatchedTupleGenerator<T, 10 * 2048> &tuple_generator, const size_t num_threads) {
-    static constexpr unsigned buffer_base_value = 2048;
+    static constexpr unsigned buffer_base_value = 2 * 1024;
     const static auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * num_threads);
     const static auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};

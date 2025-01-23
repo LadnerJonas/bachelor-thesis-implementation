@@ -5,7 +5,7 @@
 
 template<typename T, size_t partitions, size_t page_size = 5 * 1024 * 1024>
 void process_morsel_smb_lock_free_batched(BatchedTupleGenerator<T> &tuple_generator, LockFreePageManager<T, partitions, page_size> &page_manager, const size_t num_threads) {
-    static constexpr unsigned buffer_base_value = 2048;
+    static constexpr unsigned buffer_base_value = 8 * 1024;
     const auto total_buffer_size = buffer_base_value * 1024 / (sizeof(T) * num_threads);
     const auto buffer_size_per_partition = total_buffer_size / partitions;
     std::array<unsigned, partitions> buffer_index = {};
