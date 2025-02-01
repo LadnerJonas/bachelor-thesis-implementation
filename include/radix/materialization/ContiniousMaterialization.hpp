@@ -22,7 +22,7 @@ public:
                 BatchedTupleGenerator<T, batch_size> generator(current_thread_tuples_to_generate);
                 for (size_t j = 0; j < current_thread_tuples_to_generate;) {
                     auto [batch, local_batch_size] = generator.getBatchOfTuples();
-                    std::copy(batch.get(), batch.get() + local_batch_size, data.get() + current_index);
+                    std::memcpy(data.get() + local_index, batch.get(), local_batch_size * sizeof(T));
                     local_index += local_batch_size;
                     j += local_batch_size;
                 }

@@ -13,9 +13,7 @@ void process_radix_chunk_selectively(RadixPageManager<T, partitions, page_size> 
         ++histogram[partition];
     }
 
-    page_manager.add_histogram_chunk(histogram);
-    auto write_info = page_manager.get_write_info(histogram);
-
+    auto write_info = page_manager.add_histogram_chunk(histogram);
     constexpr size_t inner_loop_size = 4096 / sizeof(T);
 
     // Process k partitions at a time

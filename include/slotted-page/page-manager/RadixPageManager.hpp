@@ -17,9 +17,6 @@ class RadixPageManager {
     std::array<size_t, partitions> global_histogram;
     std::array<PartitionData<T>, partitions> partitions_data;
     std::array<PaddedMutex, partitions> partition_locks;
-    std::barrier<> thread_barrier;
-    std::mutex global_histogram_mutex;
-    std::once_flag distribute_flag;
 
     void allocate_new_page(size_t partition) {
         // assert(page_pool.has_free_page());
@@ -28,61 +25,50 @@ class RadixPageManager {
     }
 
 public:
-    explicit RadixPageManager(size_t num_threads)
-        : num_threads(num_threads),
-          thread_barrier(static_cast<long>(num_threads)) {
+    explicit RadixPageManager(const size_t num_threads) : num_threads(num_threads) {
         global_histogram.fill(0);
     }
 
-    void add_histogram_chunk(const std::array<unsigned, partitions> &histogram_chunk) {
-        {
-            std::lock_guard lock(global_histogram_mutex);
-            for (size_t i = 0; i < partitions; ++i) {
-                global_histogram[i] += histogram_chunk[i];
-            }
-        }
-        thread_barrier.arrive_and_wait();
-
-        std::call_once(distribute_flag, [&]() {
-            distribute_pages();
-        });
-    }
-
-    void distribute_pages() {
-        for (size_t partition = 0; partition < partitions; ++partition) {
-            const size_t total_tuples = global_histogram[partition];
-            const size_t total_pages = (total_tuples + tuples_per_page - 1) / tuples_per_page;
-            for (size_t i = 0; i < total_pages; ++i) {
-                allocate_new_page(partition);
-            }
-            assert(partitions_data[partition].pages.size() == total_pages);
+    void allocate_pages_for_new_histogram_state(const size_t partition, const size_t tuples_to_write, const size_t old_histogram_state) {
+        const size_t total_pages_old = (old_histogram_state + tuples_per_page - 1) / tuples_per_page;
+        const size_t total_pages_new = (old_histogram_state + tuples_to_write + tuples_per_page - 1) / tuples_per_page;
+        auto page_diff = total_pages_new - total_pages_old;
+        while (page_diff--) {
+            allocate_new_page(partition);
         }
     }
 
-    std::vector<std::vector<PageWriteInfo<T>>> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
-        std::lock_guard lock(global_histogram_mutex);
-        std::vector<std::vector<PageWriteInfo<T>>> thread_write_info(partitions);
+    void assign_pages(const size_t partition, std::array<std::vector<PageWriteInfo<T>>, partitions> &thread_write_info, size_t tuples_to_write) {
+        do {
+            const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
+            auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+            assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
+            const size_t free_space = tuples_per_page - current_tuple_offset;
+            const size_t tuples_for_page = std::min(free_space, tuples_to_write);
 
-        for (size_t partition = 0; partition < partitions; ++partition) {
+            thread_write_info[partition].emplace_back(current_page, current_tuple_offset, tuples_for_page);
+            tuples_to_write -= tuples_for_page;
+            partitions_data[partition].current_tuple_offset += tuples_for_page;
+
+            if (tuples_to_write > 0) {
+                ++partitions_data[partition].current_page;
+                partitions_data[partition].current_tuple_offset = 0;
+            }
+        } while (tuples_to_write > 0);
+    }
+    std::array<std::vector<PageWriteInfo<T>>, partitions> add_histogram_chunk(const std::array<unsigned, partitions> &local_histogram) {
+        const unsigned random_start_partition = rand() % partitions;
+
+        std::array<std::vector<PageWriteInfo<T>>, partitions> thread_write_info;
+        for (size_t i = 0; i < partitions; ++i) {
+            const auto partition = (random_start_partition + i) % partitions;
             size_t tuples_to_write = local_histogram[partition];
-
-            while (tuples_to_write > 0) {
-                const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-                auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
-                assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
-                const size_t free_space = tuples_per_page - current_tuple_offset;
-                const size_t tuples_for_page = std::min(free_space, tuples_to_write);
-
-                PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
-
-                thread_write_info[partition].emplace_back(write_info);
-                tuples_to_write -= tuples_for_page;
-                partitions_data[partition].current_tuple_offset += tuples_for_page;
-
-                if (tuples_to_write > 0) {
-                    ++partitions_data[partition].current_page;
-                    partitions_data[partition].current_tuple_offset = 0;
-                }
+            if (tuples_to_write > 0) {
+                std::lock_guard lock(partition_locks[partition]);
+                const size_t old_histogram_state = global_histogram[partition];
+                global_histogram[partition] += tuples_to_write;
+                allocate_pages_for_new_histogram_state(partition, tuples_to_write, old_histogram_state);
+                assign_pages(partition, thread_write_info, tuples_to_write);
             }
         }
 
