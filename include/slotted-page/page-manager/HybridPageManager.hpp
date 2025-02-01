@@ -36,29 +36,31 @@ public:
     std::array<std::vector<PageWriteInfo<T>>, partitions> get_write_info(const std::array<unsigned, partitions> &local_histogram) {
         std::array<std::vector<PageWriteInfo<T>>, partitions> thread_write_info;
 
-        for (size_t partition = 0; partition < partitions; ++partition) {
-            size_t tuples_to_write = local_histogram[partition];
+        const auto random_partition_start = rand() % partitions;
+        for (size_t i = 0; i < partitions; ++i) {
+            const auto partition = (i + random_partition_start) % partitions;
+            if (size_t tuples_to_write = local_histogram[partition]; tuples_to_write > 0) {
+                std::lock_guard lock(partition_locks[partition]);
+                do {
+                    const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
+                    assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
+                    const size_t free_space = tuples_per_page - current_tuple_offset;
+                    const size_t tuples_for_page = std::min(free_space, tuples_to_write);
 
-            std::lock_guard lock(partition_locks[partition]);
-            while (tuples_to_write > 0) {
-                const size_t current_tuple_offset = partitions_data[partition].current_tuple_offset;
-                assert(partitions_data[partition].pages.size() > partitions_data[partition].current_page);
-                const size_t free_space = tuples_per_page - current_tuple_offset;
-                const size_t tuples_for_page = std::min(free_space, tuples_to_write);
+                    if (free_space == 0) {
+                        allocate_new_page(partition);
+                        ++partitions_data[partition].current_page;
+                        partitions_data[partition].current_tuple_offset = 0;
+                        continue;
+                    }
 
-                if (free_space == 0) {
-                    allocate_new_page(partition);
-                    ++partitions_data[partition].current_page;
-                    partitions_data[partition].current_tuple_offset = 0;
-                    continue;
-                }
+                    const auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
+                    PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
 
-                const auto &current_page = partitions_data[partition].pages[partitions_data[partition].current_page];
-                PageWriteInfo<T> write_info(current_page, current_tuple_offset, tuples_for_page);
-
-                thread_write_info[partition].emplace_back(write_info);
-                tuples_to_write -= tuples_for_page;
-                partitions_data[partition].current_tuple_offset += tuples_for_page;
+                    thread_write_info[partition].emplace_back(write_info);
+                    tuples_to_write -= tuples_for_page;
+                    partitions_data[partition].current_tuple_offset += tuples_for_page;
+                } while (tuples_to_write > 0);
             }
         }
 

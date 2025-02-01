@@ -51,7 +51,7 @@ void request_and_process_chunk(HybridPageManager<T, partitions, page_size> &page
         }
         std::array<std::vector<PageWriteInfo<T>>, partitions> new_write_info = page_manager.get_write_info(histogram);
         for (size_t i = 0; i < partitions; ++i) {
-            write_info[i].insert(write_info[i].end(), new_write_info[i].begin(), new_write_info[i].end());
+            write_info[i].insert(write_info[i].end(), new_write_info[i].cbegin(), new_write_info[i].cend());
         }
 
         for (size_t i = 0; i < chunk_size; ++i) {
