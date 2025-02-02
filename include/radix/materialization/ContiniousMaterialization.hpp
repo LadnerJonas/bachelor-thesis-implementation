@@ -1,7 +1,5 @@
 #pragma once
 #include <tuple-generator/BatchedTupleGenerator.hpp>
-#include <tuple-generator/FutureBasedTupleGenerator.hpp>
-#include <tuple-generator/MultithreadedTupleGenerator.hpp>
 
 template<typename T, size_t batch_size = 2048>
 class ContinuousMaterialization {

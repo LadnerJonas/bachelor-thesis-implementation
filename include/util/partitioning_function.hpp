@@ -17,8 +17,7 @@ size_t partition_function(const T &entry) {
 template<typename T>
 size_t partition_function(T &entry, size_t num_partitions) {
     const size_t mask = num_partitions - 1;
-    const bool is_power_of_2 = (num_partitions & mask) == 0;
-    if (is_power_of_2) {
+    if ((num_partitions & mask) == 0) {
         return entry & mask;
     }
     return entry % num_partitions;

@@ -40,9 +40,7 @@ public:
         header->tuple_count = 0;
     }
 
-    //copy constructor delete
     LockFreeManagedSlottedPage(const LockFreeManagedSlottedPage &other) = delete;
-    //copy assignment delete
     LockFreeManagedSlottedPage &operator=(const LockFreeManagedSlottedPage &other) = delete;
 
     [[nodiscard]] WriteInfo increment_and_fetch_opt_write_info() {

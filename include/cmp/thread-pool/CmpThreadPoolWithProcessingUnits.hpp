@@ -52,7 +52,6 @@ public:
                     CmpProcessorOfUnit<T, partitions, page_size> processor(w, num_worker, worker_threads, this->page_manager);
                     while (running[pu].load()) {
                         while ((thread_finished[pu].load() & 1u << w) != 0) {
-                            // std::this_thread::yield();
                         }
                         processor.process(current_tasks[pu].first.get(), current_tasks[pu].second);
                         thread_finished[pu] |= 1u << w;
@@ -71,7 +70,6 @@ public:
 
     void stop(const unsigned processingUnitId) {
         while (thread_finished[processingUnitId].load() != all_workers_done_mask[processingUnitId]) {
-            // std::this_thread::yield();
         }
         current_tasks[processingUnitId] = {nullptr, 0};
         running[processingUnitId].store(false);

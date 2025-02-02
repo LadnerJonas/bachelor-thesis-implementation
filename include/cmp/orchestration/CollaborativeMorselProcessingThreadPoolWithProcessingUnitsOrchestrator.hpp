@@ -36,7 +36,7 @@ public:
                     }
                 });
             }
-        }// generator_threads are joined here
+        }
         for (unsigned pu = 0; pu < numProcessingUnits; pu++) {
             thread_pool.stop(pu);
         }

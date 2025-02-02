@@ -21,7 +21,7 @@ struct alignas(std::hardware_destructive_interference_size) PaddedAtomic {
     }
 
     template<typename U = T>
-    typename std::enable_if<std::is_integral<U>::value || std::is_floating_point<U>::value || std::is_pointer<U>::value, U>::type
+    std::enable_if_t<std::is_integral_v<U> || std::is_floating_point_v<U> || std::is_pointer_v<U>, U>
     fetch_add(U arg) {
         return value.fetch_add(arg);
     }

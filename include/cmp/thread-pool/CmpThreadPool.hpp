@@ -27,7 +27,6 @@ public:
                 T *last_ptr = nullptr;
                 while (running.load()) {
                     while ((thread_finished.load() & 1u << i) != 0) {
-                        // std::this_thread::yield();
                     }
                     auto new_ptr = current_task.first.get();
                     if (running.load() && new_ptr != last_ptr) {
@@ -45,7 +44,6 @@ public:
     void dispatchTask(std::unique_ptr<T[]> data, size_t size) {
         std::lock_guard lock(dispatch_mutex);
         while (thread_finished.load() != all_workers_done_mask) {
-            // std::this_thread::yield();
         }
         current_task.first = std::move(data);
         current_task.second = size;
@@ -54,7 +52,6 @@ public:
 
     void stop() {
         while (thread_finished.load() != all_workers_done_mask) {
-            // std::this_thread::yield();
         }
         running.store(false);
         current_task = {nullptr, 0};

@@ -28,7 +28,6 @@ public:
         header->tuple_count = 0;
     }
 
-    //copy constructor delete
     ManagedSlottedPage(const ManagedSlottedPage &other) = delete;
     ManagedSlottedPage &operator=(const ManagedSlottedPage &) = delete;
 
@@ -50,7 +49,6 @@ public:
         auto slot_start = reinterpret_cast<SlotInfo<T> *>(page_data.get() + sizeof(HeaderInfoNonAtomic) + header->tuple_count * sizeof(SlotInfo<T>));
         new (slot_start) SlotInfo<T>{tuple_offset_from_end, T::get_size_of_variable_data(), tuple.get_key()};
 
-        // Increase tuple count
         header->tuple_count += 1;
         return true;
     }

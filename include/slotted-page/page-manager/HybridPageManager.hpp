@@ -21,7 +21,6 @@ class HybridPageManager {
     const size_t tuples_per_page = RawSlottedPage<T>::get_max_tuples(page_size);
 
     void allocate_new_page(size_t partition) {
-        // assert(page_pool.has_free_page());
         partitions_data[partition].pages.emplace_back(page_size);
         partitions_data[partition].current_tuple_offset = 0;
     }
