@@ -1,6 +1,5 @@
 #pragma once
 
-#include "hybrid/chunk-creation/ChunkCreator.hpp"
 #include "hybrid/worker/request_and_process_chunk.hpp"
 #include "slotted-page/page-manager/HybridPageManager.hpp"
 
