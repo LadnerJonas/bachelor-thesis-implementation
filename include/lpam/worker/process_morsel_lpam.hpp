@@ -1,4 +1,5 @@
 #pragma once
+#include <ranges>
 
 #include "slotted-page/page-manager/LocalPagesAndMergePageManager.hpp"
 #include "slotted-page/page-manager/OnDemandSingleThreadPageManager.hpp"
@@ -49,6 +50,9 @@ void process_morsel_lpam(BatchedTupleGenerator<T> &tuple_generator, LocalPagesAn
         if (pages_to_merge_partition.empty()) {
             continue;
         }
+        std::ranges::sort(pages_to_merge_partition, [](const ManagedSlottedPage<T> &a, const ManagedSlottedPage<T> &b) {
+            return a.get_tuple_count() < b.get_tuple_count();
+        });
 
         const auto max_tuples_per_page = ManagedSlottedPage<T>::get_max_tuples(page_size);
         unsigned front = 0, back = pages_to_merge_partition.size() - 1;
