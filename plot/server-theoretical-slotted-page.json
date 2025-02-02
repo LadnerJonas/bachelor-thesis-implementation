@@ -1,0 +1,506 @@
+[
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 4,
+    "written_tuples": 118230000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 4,
+    "written_tuples": 234090000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 4,
+    "written_tuples": 500170000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 4,
+    "written_tuples": 932970000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 4,
+    "written_tuples": 1075050000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 4,
+    "written_tuples": 1137440000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 4,
+    "written_tuples": 300420000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 4,
+    "written_tuples": 591400000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 4,
+    "written_tuples": 1165230000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 4,
+    "written_tuples": 2171600000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 4,
+    "written_tuples": 2217730000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 4,
+    "written_tuples": 1765800000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 16,
+    "written_tuples": 49810000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 16,
+    "written_tuples": 99220000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 16,
+    "written_tuples": 196870000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 16,
+    "written_tuples": 394920000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 16,
+    "written_tuples": 477100000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 16,
+    "written_tuples": 500430000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 16,
+    "written_tuples": 98700000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 16,
+    "written_tuples": 196350000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 16,
+    "written_tuples": 387710000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 16,
+    "written_tuples": 741800000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 16,
+    "written_tuples": 898110000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 16,
+    "written_tuples": 686620000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 100,
+    "written_tuples": 10830000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 100,
+    "written_tuples": 21300000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 100,
+    "written_tuples": 41780000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 100,
+    "written_tuples": 78480000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 100,
+    "written_tuples": 96300000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 100,
+    "written_tuples": 78830000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 100,
+    "written_tuples": 18070000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 100,
+    "written_tuples": 35650000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 100,
+    "written_tuples": 70120000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 100,
+    "written_tuples": 136900000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 100,
+    "written_tuples": 163130000
+  },
+  {
+    "synchronised": 0,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 100,
+    "written_tuples": 92380000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 4,
+    "written_tuples": 136310000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 4,
+    "written_tuples": 227540000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 4,
+    "written_tuples": 409990000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 4,
+    "written_tuples": 627570000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 4,
+    "written_tuples": 811860000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 4,
+    "written_tuples": 1067190000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 4,
+    "written_tuples": 277610000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 4,
+    "written_tuples": 381420000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 4,
+    "written_tuples": 519040000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 4,
+    "written_tuples": 843580000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 4,
+    "written_tuples": 982780000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 4,
+    "written_tuples": 1142160000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 16,
+    "written_tuples": 51970000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 16,
+    "written_tuples": 81400000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 16,
+    "written_tuples": 131330000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 16,
+    "written_tuples": 249760000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 16,
+    "written_tuples": 233830000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 16,
+    "written_tuples": 379320000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 16,
+    "written_tuples": 106890000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 16,
+    "written_tuples": 180160000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 16,
+    "written_tuples": 275640000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 16,
+    "written_tuples": 375850000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 16,
+    "written_tuples": 412220000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 16,
+    "written_tuples": 525790000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 1,
+    "tuple_bytes": 100,
+    "written_tuples": 11210000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 2,
+    "tuple_bytes": 100,
+    "written_tuples": 16120000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 4,
+    "tuple_bytes": 100,
+    "written_tuples": 30110000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 8,
+    "tuple_bytes": 100,
+    "written_tuples": 52180000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 10,
+    "tuple_bytes": 100,
+    "written_tuples": 66190000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 32,
+    "threads": 20,
+    "tuple_bytes": 100,
+    "written_tuples": 74100000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 1,
+    "tuple_bytes": 100,
+    "written_tuples": 17950000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 2,
+    "tuple_bytes": 100,
+    "written_tuples": 35470000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 4,
+    "tuple_bytes": 100,
+    "written_tuples": 50600000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 8,
+    "tuple_bytes": 100,
+    "written_tuples": 69130000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 10,
+    "tuple_bytes": 100,
+    "written_tuples": 76540000
+  },
+  {
+    "synchronised": 1,
+    "partitions": 1024,
+    "threads": 20,
+    "tuple_bytes": 100,
+    "written_tuples": 90230000
+  }
+]
