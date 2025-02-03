@@ -12,7 +12,7 @@
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS": "-O3 -march=native -DNDEBUG -fno-exceptions"
+        "CMAKE_CXX_FLAGS": "-O2 -march=native -flto -DNDEBUG -fno-exceptions"
       }
     },
     {
@@ -30,7 +30,7 @@
       "binaryDir": "${sourceDir}/build/profile",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Profile",
-        "CMAKE_CXX_FLAGS": "-O3 -march=native -DNDEBUG -fno-exceptions -g -fno-omit-frame-pointer -fno-inline"
+        "CMAKE_CXX_FLAGS": "-O2 -march=native -flto -DNDEBUG -fno-exceptions -g -fno-omit-frame-pointer -fno-inline"
       }
     },
     {
@@ -39,7 +39,7 @@
       "binaryDir": "${sourceDir}/build/pgo-instrument",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS": "-O3 -march=native -fprofile-generate=${sourceDir}/profile_data -DNDEBUG  -fno-exceptions"
+        "CMAKE_CXX_FLAGS": "-O2 -march=native -flto -fprofile-generate=${sourceDir}/profile_data -DNDEBUG  -fno-exceptions"
       }
     },
     {
@@ -48,7 +48,7 @@
       "binaryDir": "${sourceDir}/build/pgo-optimize",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS": "-O3 -march=native -fprofile-use=${sourceDir}/profile_data -fprofile-correction -DNDEBUG  -fno-exceptions"
+        "CMAKE_CXX_FLAGS": "-O2 -march=native -flto -fprofile-use=${sourceDir}/profile_data -fprofile-correction -DNDEBUG  -fno-exceptions"
       }
     }
   ],
