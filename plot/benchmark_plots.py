@@ -40,8 +40,8 @@ colors = [
     "#0072B2",
     "#D55E00",
     "#CC79A7",
-    "#999999",
-    "#F781BF",
+    # "#999999",
+    # "#F781BF",
     "#A65628",
     "#FF7F00",
     "#984EA3",
@@ -139,7 +139,9 @@ def load_data(file_path):
     numeric_cols = columns[1:-1]
     df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
 
-    df = df.sort_values(by=["tuple_size", "Partitions", "Threads"], ascending=True)
+    df = df.sort_values(
+        by=["Benchmark", "tuple_size", "Partitions", "Threads"], ascending=True
+    )
     return df
 
 
@@ -300,26 +302,39 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
     for r in range(0, 3):
         for c in range(0, number_cols):
             fig_sub, ax_sub = plt.subplots(figsize=(12, 6))
-            for i, line in enumerate(reversed(axs[r][c].get_lines())):  # Copy lines from original plot
+            for i, line in enumerate(
+                axs[r][c].get_lines()
+            ):  # Copy lines from original plot
                 marker = markers[i % len(markers)]
                 color = colors[i % len(colors)]
-                if line.get_label() == "Theoretical Max Speed un-synchronised":
+                if line.get_label() == "Theor. Max Speed (Unsync.)":
                     marker = "o"
                     color = "gray"
                     i -= 1
-                if line.get_label() == "Theoretical Max Speed synchronised":
+                if line.get_label() == "Theor. Max Speed (Sync.)":
                     marker = "o"
                     color = "black"
                     i -= 1
-                ax_sub.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(), marker=marker, color=color)
+                ax_sub.plot(
+                    line.get_xdata(),
+                    line.get_ydata(),
+                    label=line.get_label(),
+                    marker=marker,
+                    color=color,
+                )
             ax_sub.set_xticks([1, 2, 4, 8, 10, 20])
             ax_sub.legend()
             ax_sub.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
             tuple_size = [4, 16, 100][r]
             partitions = [32, 1024][c]
-            fig_sub.savefig(f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}", bbox_inches="tight")
+            fig_sub.savefig(
+                f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}",
+                bbox_inches="tight",
+            )
             plt.close(fig_sub)
-            print(f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}")
+            print(
+                f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}"
+            )
 
 
 def generate_combined_images_time(
@@ -437,26 +452,40 @@ def generate_combined_images_time(
     for r in range(0, 3):
         for c in range(0, number_cols):
             fig_sub, ax_sub = plt.subplots(figsize=(12, 6))
-            for i, line in enumerate(reversed(axs[r][c].get_lines())):  # Copy lines from original plot
+            for i, line in enumerate(
+                reversed(axs[r][c].get_lines())
+            ):  # Copy lines from original plot
                 marker = markers[i % len(markers)]
                 color = colors[i % len(colors)]
-                if line.get_label() == "Theoretical Max Speed un-synchronised":
+                if line.get_label() == "Theor. Max Speed (Unsync.)":
                     marker = "o"
                     color = "gray"
                     i -= 1
-                if line.get_label() == "Theoretical Max Speed synchronised":
+                if line.get_label() == "Theor. Max Speed (Sync.)":
                     marker = "o"
                     color = "black"
                     i -= 1
-                ax_sub.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(), marker=marker, color=color)
+                ax_sub.plot(
+                    line.get_xdata(),
+                    line.get_ydata(),
+                    label=line.get_label(),
+                    marker=marker,
+                    color=color,
+                )
             ax_sub.set_xticks([1, 2, 4, 8, 10, 20])
             ax_sub.legend()
             ax_sub.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
             tuple_size = [4, 16, 100][r]
             partitions = [32, 1024][c]
-            fig_sub.savefig(f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}", bbox_inches="tight")
+            fig_sub.savefig(
+                f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}",
+                bbox_inches="tight",
+            )
             plt.close(fig_sub)
-            print(f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}")
+            print(
+                f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}"
+            )
+
 
 def generate_combined_images_tuples_per_second(
     df,
@@ -528,7 +557,40 @@ def generate_combined_images_tuples_per_second(
             )
 
         y_scale = max_y / min_y
+        list_of_thread = [1, 2, 4, 8, 10, 20]
+        theoretical_max_speed_df = pd.read_json(
+            f"plot/{args.source}-theoretical-slotted-page.json", orient="records"
+        )
 
+        match = re.match(r"Tuple(\d+)-(\d+)", group_value)
+        tuple_size, partitions = map(int, match.groups())
+        query_result = theoretical_max_speed_df[
+            (theoretical_max_speed_df["synchronised"] == 0)  # 0 means not-synchronised
+            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
+            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
+        ]
+        ax.plot(
+            list_of_thread,
+            list(query_result["written_tuples"].values),
+            marker="o",
+            color="gray",
+            linestyle="--",
+            label="Theor. Max Speed (Unsync.)",
+        )
+
+        query_result = theoretical_max_speed_df[
+            (theoretical_max_speed_df["synchronised"] == 1)  # 0 means not-synchronised
+            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
+            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
+        ]
+        ax.plot(
+            list_of_thread,
+            list(query_result["written_tuples"].values),
+            marker="o",
+            color="black",
+            linestyle="--",
+            label="Theor. Max Speed (Sync.)",
+        )
         for i, benchmark in enumerate(df["Benchmark"].unique()):
             df_benchmark = df_group[df_group["Benchmark"] == benchmark]
 
@@ -549,49 +611,8 @@ def generate_combined_images_tuples_per_second(
                 # Collect annotation data
                 for x, y in zip(df_benchmark["Threads"], df_benchmark[y_column]):
                     annotations.append((x, total_tuple_map[main_index] / y))
-                    list_of_thread.add(int(x))
 
         # annotate_with_padding(ax, annotations, y_scale)
-        max_thread_count = max(list_of_thread)
-        list_of_thread_backup = sorted(list(set(list_of_thread)))
-        for i in range(2, max_thread_count, 2):
-            list_of_thread.add(i)
-
-        list_of_thread = list(list_of_thread)
-
-        theoretical_max_speed_df = pd.read_json(
-            f"plot/{args.source}-theoretical-slotted-page.json", orient="records"
-        )
-        match = re.match(r"Tuple(\d+)-(\d+)", group_value)
-        tuple_size, partitions = map(int, match.groups())
-
-        query_result = theoretical_max_speed_df[
-            (theoretical_max_speed_df["synchronised"] == 1)  # 0 means not-synchronised
-            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
-            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
-        ]
-        ax.plot(
-            list_of_thread_backup,
-            list(query_result["written_tuples"].values),
-            marker="o",
-            color="black",
-            linestyle="--",
-            label="Theoretical Max Speed synchronised",
-        )
-
-        query_result = theoretical_max_speed_df[
-            (theoretical_max_speed_df["synchronised"] == 0)  # 0 means not-synchronised
-            & (theoretical_max_speed_df["tuple_bytes"] == tuple_size)  # 4B tuples
-            & (theoretical_max_speed_df["partitions"] == partitions)  # 32 partitions
-        ]
-        ax.plot(
-            list_of_thread_backup,
-            list(query_result["written_tuples"].values),
-            marker="o",
-            color="gray",
-            linestyle="--",
-            label="Theoretical Max Speed un-synchronised",
-        )
 
         # Configure subplot
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
@@ -619,27 +640,47 @@ def generate_combined_images_tuples_per_second(
     os.makedirs(f"{path}/individual", exist_ok=True)
     for r in range(0, 3):
         for c in range(0, number_cols):
-            fig_sub, ax_sub = plt.subplots(figsize=(12, 6))
-            for i, line in enumerate(reversed(axs[r][c].get_lines())):  # Copy lines from original plot
+            fig_sub, ax_sub = plt.subplots(figsize=(8, 5))
+            for i, line in enumerate(
+                axs[r][c].get_lines()
+            ):  # Copy lines from original plot
                 marker = markers[i % len(markers)]
                 color = colors[i % len(colors)]
-                if line.get_label() == "Theoretical Max Speed un-synchronised":
-                    marker = "o"
-                    color = "gray"
+                line_style = "-"
+                if line.get_label() in [
+                    "Theor. Max Speed (Unsync.)",
+                    "Theor. Max Speed (Sync.)",
+                ]:
+                    color = "gray" if "Unsync" in line.get_label() else "black"
                     i -= 1
-                if line.get_label() == "Theoretical Max Speed synchronised":
-                    marker = "o"
-                    color = "black"
-                    i -= 1
-                ax_sub.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(), marker=marker, color=color)
+                    line_style = "--"
+                ax_sub.plot(
+                    line.get_xdata(),
+                    line.get_ydata(),
+                    label=line.get_label(),
+                    marker=marker,
+                    color=color,
+                    linestyle=line_style,
+                )
             ax_sub.set_xticks([1, 2, 4, 8, 10, 20])
-            ax_sub.legend()
+            ax_sub.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
             ax_sub.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
             tuple_size = [4, 16, 100][r]
             partitions = [32, 1024][c]
-            fig_sub.savefig(f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}", bbox_inches="tight")
+            ax_sub.set_title(
+                f"Tuple of {tuple_size}B with {partitions} Partitions",
+                # fontsize=14,
+            )
+            ax_sub.set_xlabel("Threads")
+            ax_sub.set_ylabel(f"Tuples per Second")
+            fig_sub.savefig(
+                f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}",
+                bbox_inches="tight",
+            )
             plt.close(fig_sub)
-            print(f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}")
+            print(
+                f"Saved individual plot to {path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}"
+            )
 
 
 def annotate_with_padding(ax, annotations, y_scale):
