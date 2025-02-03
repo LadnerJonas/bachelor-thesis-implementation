@@ -34,7 +34,7 @@ public:
             _mm256_store_si256(reinterpret_cast<__m256i *>(&p[i]), random_numbers);
         }
 #endif
-        for (; std::min(num_of_8_bytes, static_cast<size_t>(2'000'000'000)); ++i) {
+        for (; i < num_of_8_bytes; ++i) {
             p[i] = gen();
         }
 
