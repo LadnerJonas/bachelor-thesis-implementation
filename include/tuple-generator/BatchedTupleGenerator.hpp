@@ -21,18 +21,20 @@ public:
     }
 
     void generateBatchOfTuples() {
-        constexpr size_t num_of_4_bytes = sizeof(T) * batch_size / sizeof(uint64_t);
+        constexpr size_t num_of_8_bytes = sizeof(T) * batch_size / sizeof(uint64_t);
         auto *p = reinterpret_cast<uint64_t *>(&batch);
         assert(reinterpret_cast<std::uintptr_t>(p) % 32 == 0 && "Pointer not 32-byte aligned!");
         size_t i = 0;
 
+        static_assert(num_of_8_bytes * sizeof(uint64_t) == sizeof(batch), "Size of T is not a multiple of 8 bytes!");
+
 #ifdef __AVX2__
-        for (; i + 3 < num_of_4_bytes; i += 4) {
+        for (; i + 3 < num_of_8_bytes; i += 4) {
             __m256i random_numbers = _mm256_set_epi64x(gen(), gen(), gen(), gen());
             _mm256_store_si256(reinterpret_cast<__m256i *>(&p[i]), random_numbers);
         }
 #endif
-        for (; i < num_of_4_bytes; ++i) {
+        for (; std::min(num_of_8_bytes, static_cast<size_t>(2'000'000'000)); ++i) {
             p[i] = gen();
         }
 
