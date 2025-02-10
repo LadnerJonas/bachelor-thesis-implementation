@@ -7,7 +7,23 @@ from adjustText import adjust_text
 import re
 
 plt.rcParams.update({"text.usetex": True, "pgf.texsystem": "pdflatex"})
-file_ending = "svg"
+text_keys = [
+    "font.size",
+    "axes.titlesize",
+    "axes.labelsize",
+    "xtick.labelsize",
+    "ytick.labelsize",
+    "legend.fontsize",
+]
+plt.rcParams.update(
+    {
+        key: plt.rcParams[key] + 4
+        for key in text_keys
+        if isinstance(plt.rcParams[key], (int, float))
+    }
+)
+
+file_ending = "pgf"
 
 locale.setlocale(locale.LC_ALL, "de_DE.UTF-8")  # Set locale to a European format
 
@@ -307,11 +323,11 @@ def generate_combined_images(df, path, grouping_column, y_label, y_column, y_uni
             ):  # Copy lines from original plot
                 marker = markers[i % len(markers)]
                 color = colors[i % len(colors)]
-                if line.get_label() == "Theor. Max Speed (Unsync.)":
+                if line.get_label() == "Best Case (Unsync.)":
                     marker = "o"
                     color = "gray"
                     i -= 1
-                if line.get_label() == "Theor. Max Speed (Sync.)":
+                if line.get_label() == "Best Case (Sync.)":
                     marker = "o"
                     color = "black"
                     i -= 1
@@ -457,11 +473,11 @@ def generate_combined_images_time(
             ):  # Copy lines from original plot
                 marker = markers[i % len(markers)]
                 color = colors[i % len(colors)]
-                if line.get_label() == "Theor. Max Speed (Unsync.)":
+                if line.get_label() == "Best Case (Unsync.)":
                     marker = "o"
                     color = "gray"
                     i -= 1
-                if line.get_label() == "Theor. Max Speed (Sync.)":
+                if line.get_label() == "Best Case (Sync.)":
                     marker = "o"
                     color = "black"
                     i -= 1
@@ -502,7 +518,7 @@ def generate_combined_images_tuples_per_second(
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
-    number_cols = 2
+    number_cols = 4
     # Create a figure with multiple subplots (one per group value)
     fig, axs = plt.subplots(
         ncols=number_cols, nrows=3, figsize=(12 * number_cols, 6 * 3)
@@ -575,7 +591,7 @@ def generate_combined_images_tuples_per_second(
             marker="o",
             color="gray",
             linestyle="--",
-            label="Theor. Max Speed (Unsync.)",
+            label="Best Case (Unsync.)",
         )
 
         query_result = theoretical_max_speed_df[
@@ -589,7 +605,7 @@ def generate_combined_images_tuples_per_second(
             marker="o",
             color="black",
             linestyle="--",
-            label="Theor. Max Speed (Sync.)",
+            label="Best Case (Sync.)",
         )
         for i, benchmark in enumerate(df["Benchmark"].unique()):
             df_benchmark = df_group[df_group["Benchmark"] == benchmark]
@@ -638,7 +654,7 @@ def generate_combined_images_tuples_per_second(
     print(f"Saved combined plot to {output_file}")
 
     os.makedirs(f"{path}/individual", exist_ok=True)
-    for r in range(0, 3):
+    for r in range(0, 1):
         for c in range(0, number_cols):
             fig_sub, ax_sub = plt.subplots(figsize=(8, 5))
             for i, line in enumerate(
@@ -648,8 +664,8 @@ def generate_combined_images_tuples_per_second(
                 color = colors[i % len(colors)]
                 line_style = "-"
                 if line.get_label() in [
-                    "Theor. Max Speed (Unsync.)",
-                    "Theor. Max Speed (Sync.)",
+                    "Best Case (Unsync.)",
+                    "Best Case (Sync.)",
                 ]:
                     color = "gray" if "Unsync" in line.get_label() else "black"
                     i -= 1
@@ -663,10 +679,25 @@ def generate_combined_images_tuples_per_second(
                     linestyle=line_style,
                 )
             ax_sub.set_xticks([1, 2, 4, 8, 10, 20])
-            ax_sub.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
+            # ax_sub.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
+
+            if r == 0 and c == 0:
+                handles, labels = ax_sub.get_legend_handles_labels()
+                fig_legend = plt.figure()
+                fig_legend.legend(handles, labels, loc="center", ncol=4)
+
+                # Save legend separately
+                fig_legend.savefig(
+                    f"{path}/individual/legend.{file_ending}",
+                    bbox_inches="tight",
+                    pad_inches=0,
+                )
+                plt.close(fig_legend)
+                print(f"Saved legend to {path}/individual/legend.{file_ending}")
+
             ax_sub.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
-            tuple_size = [4, 16, 100][r]
-            partitions = [32, 1024][c]
+            tuple_size = [4, 16, 100][r + 1]
+            partitions = [2, 4, 8, 16][c]
             ax_sub.set_title(
                 f"Tuple of {tuple_size}B with {partitions} Partitions",
                 # fontsize=14,
@@ -676,6 +707,7 @@ def generate_combined_images_tuples_per_second(
             fig_sub.savefig(
                 f"{path}/individual/{y_label}-Tuple{tuple_size}-Partitions{partitions}.{file_ending}",
                 bbox_inches="tight",
+                pad_inches=0,
             )
             plt.close(fig_sub)
             print(
