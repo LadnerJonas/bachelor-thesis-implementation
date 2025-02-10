@@ -49,13 +49,13 @@ fig, ax = plt.subplots(figsize=(12, 6))
 baseline_bars = ax.bar(
     implementations,
     baseline_values,
-    color="#CCCCC6",
+    color="tab:gray",
 )
 overhead_bars = ax.bar(
     implementations,
     overhead,
     bottom=baseline_values,
-    color="#0065BD",
+    color="tab:blue",
     label="Additional heap memory",
 )
 
@@ -63,14 +63,14 @@ ax.bar(
     implementations[3],
     total_heap[3] - baseline - 0.12,
     bottom=baseline_values,
-    color="#F7B11E",
+    color="tab:purple",
     label=f"Temporary Slotted Pages ({total_heap[3] - baseline - 0.12:.2f} GiB)",
 )
 ax.bar(
     implementations[-2],
     radix_materialization,
     bottom=baseline_values,
-    color="#9FBA36",
+    color="tab:orange",
     label=f"Radix Materialization ({radix_materialization:.2f} GiB)",
 )
 # Add baseline line
