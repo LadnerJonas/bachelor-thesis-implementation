@@ -49,30 +49,16 @@ markers = [
     ".",
 ]
 colors = [
-    "#E69F00",
-    "#56B4E9",
-    "#009E73",
-    "#F0E442",
-    "#0072B2",
-    "#D55E00",
-    "#CC79A7",
-    # "#999999",
-    # "#F781BF",
-    "#A65628",
-    "#FF7F00",
-    "#984EA3",
-    "#4DAF4A",
-    "#377EB8",
-    "#E41A1C",
-    "#FFFF33",
-    "#A6CEE3",
-    "#1F78B4",
-    "#B2DF8A",
-    "#33A02C",
-    "#FB9A99",
-    "#E31A1C",
-    "#FDBF6F",
-    "#FFDB5C",
+    "#FF6F00",  # Powerful Orange
+    "#56B4E9",  # Sky Blue
+    "#1B4F27",  # Dark Green
+    "#F7C530",  # Golden Yellow
+    "#3C5488",  # Dark Blue
+    "#D32F2F",  # Powerful Red
+    "#CC79A7",  # Pink
+    "#A65628",  # Brown
+    "#984EA3",  # Purple
+    "#4DAF4A",  # Bright Green
 ]
 
 
@@ -518,7 +504,7 @@ def generate_combined_images_tuples_per_second(
     # Get unique group values for creating subplots
     unique_group_values = df[grouping_column].unique()
     num_groups = len(unique_group_values)
-    number_cols = 4
+    number_cols = 2
     # Create a figure with multiple subplots (one per group value)
     fig, axs = plt.subplots(
         ncols=number_cols, nrows=3, figsize=(12 * number_cols, 6 * 3)
@@ -654,7 +640,7 @@ def generate_combined_images_tuples_per_second(
     print(f"Saved combined plot to {output_file}")
 
     os.makedirs(f"{path}/individual", exist_ok=True)
-    for r in range(0, 1):
+    for r in range(0, 3):
         for c in range(0, number_cols):
             fig_sub, ax_sub = plt.subplots(figsize=(8, 5))
             for i, line in enumerate(
@@ -696,8 +682,8 @@ def generate_combined_images_tuples_per_second(
                 print(f"Saved legend to {path}/individual/legend.{file_ending}")
 
             ax_sub.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
-            tuple_size = [4, 16, 100][r + 1]
-            partitions = [2, 4, 8, 16][c]
+            tuple_size = [4, 16, 100][r]
+            partitions = [32, 1024][c]
             ax_sub.set_title(
                 f"Tuple of {tuple_size}B with {partitions} Partitions",
                 # fontsize=14,
